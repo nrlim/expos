@@ -1,0 +1,316 @@
+// This is your Prisma schema file.
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  OWNER
+  ADMIN
+  CASHIER
+}
+
+enum ProductStatus {
+  AVAILABLE
+  BOOKED
+  SOLD
+}
+
+enum TransactionType {
+  SALE
+  REFUND
+  ADJUSTMENT
+}
+
+// ─── Tenant (Store / Business unit) ───────────────────────────────────────────
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  users        User[]
+  products     Product[]
+  categories   Category[]
+  brands       Brand[]
+  stores       Store[]
+  transactions Transaction[]
+  units        Unit[]
+  attributes   Attribute[]
+  warranties   Warranty[]
+
+  @@map("tenants")
+}
+
+// ─── Store (Physical outlet under Tenant) ─────────────────────────────────────
+
+model Store {
+  id        String   @id @default(cuid())
+  name      String
+  location  String?
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inventories  Inventory[]
+  transactions Transaction[]
+
+  @@unique([name, tenantId])
+  @@index([tenantId])
+  @@map("stores")
+}
+
+// ─── Category ─────────────────────────────────────────────────────────────────
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  imageUrl  String? // icon / thumbnail for this category
+  tenantId  String
+  parentId  String? // null = root category
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children Category[] @relation("CategoryTree")
+  products Product[]
+
+  @@unique([name, tenantId, parentId])
+  @@index([tenantId])
+  @@index([parentId])
+  @@map("categories")
+}
+
+// ─── Brand ────────────────────────────────────────────────────────────────────
+
+model Brand {
+  id        String   @id @default(cuid())
+  name      String
+  imageUrl  String? // optional brand logo
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([name, tenantId])
+  @@index([tenantId])
+  @@map("brands")
+}
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String // bcrypt hash — never stored in plain text
+  role      Role     @default(CASHIER)
+  tenantId  String
+  createdAt DateTime @default(now())
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("users")
+}
+
+// ─── Product ──────────────────────────────────────────────────────────────────
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  brand         String? // Legacy string field (will migrate away or keep as fallback)
+  brandId       String? // New relational brand
+  modelName     String
+  sku           String?
+  storage       String?
+  price         Int // stored in smallest currency unit (IDR)
+  costPrice     Int? // purchase price for margin tracking
+  condition     String // "New" | "Like New" | "Good" | "Fair"
+  batteryHealth Int? // 0-100, nullable for non-phones
+  isFullset     Boolean  @default(false)
+  warranty      String? // Legacy string warranty
+  warrantyId    String? // New relational warranty
+  imageUrl      String?
+  images        String   @default("[]") // JSON array of image paths
+  tenantId      String
+  categoryId    String?
+  unitId        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant           Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category         Category?               @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  brandRel         Brand?                  @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  unit             Unit?                   @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  warrantyRel      Warranty?               @relation(fields: [warrantyId], references: [id], onDelete: SetNull)
+  inventories      Inventory[]
+  transactionItems TransactionItem[]
+  attributeValues  ProductAttributeValue[]
+
+  @@index([tenantId])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([unitId])
+  @@index([warrantyId])
+  @@map("products")
+}
+
+// ─── Unit ─────────────────────────────────────────────────────────────────────
+
+model Unit {
+  id        String   @id @default(cuid())
+  name      String
+  shortName String
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([name, tenantId])
+  @@index([tenantId])
+  @@map("units")
+}
+
+// ─── Attribute & AttributeValue ───────────────────────────────────────────────
+
+model Attribute {
+  id        String   @id @default(cuid())
+  name      String
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  values                 AttributeValue[]
+  productAttributeValues ProductAttributeValue[]
+
+  @@unique([name, tenantId])
+  @@index([tenantId])
+  @@map("attributes")
+}
+
+model AttributeValue {
+  id          String   @id @default(cuid())
+  value       String
+  attributeId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  attribute     Attribute               @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  productValues ProductAttributeValue[]
+
+  @@unique([value, attributeId])
+  @@index([attributeId])
+  @@map("attribute_values")
+}
+
+// ─── Product Attribute Values ─────────────────────────────────────────────────
+
+model ProductAttributeValue {
+  id               String @id @default(cuid())
+  productId        String
+  attributeId      String
+  attributeValueId String
+
+  product        Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attribute      Attribute      @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  attributeValue AttributeValue @relation(fields: [attributeValueId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, attributeId]) // Ensure max 1 value per product per attribute
+  @@index([productId])
+  @@index([attributeId])
+  @@index([attributeValueId])
+  @@map("product_attribute_values")
+}
+
+// ─── Warranty ─────────────────────────────────────────────────────────────────
+
+model Warranty {
+  id           String   @id @default(cuid())
+  name         String
+  duration     Int
+  durationUnit String // "Days" | "Months" | "Years"
+  description  String?
+  tenantId     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([name, tenantId])
+  @@index([tenantId])
+  @@map("warranties")
+}
+
+// ─── Inventory (Stock tracking per Store) ─────────────────────────────────────
+
+model Inventory {
+  id        String        @id @default(cuid())
+  productId String
+  storeId   String
+  stock     Int           @default(0)
+  price     Int? // Store-specific price override
+  status    ProductStatus @default(AVAILABLE)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store   Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, storeId])
+  @@index([storeId])
+  @@index([productId])
+  @@map("inventories")
+}
+
+// ─── Transaction ──────────────────────────────────────────────────────────────
+
+model Transaction {
+  id          String          @id @default(cuid())
+  type        TransactionType @default(SALE)
+  totalAmount Int
+  notes       String?
+  tenantId    String
+  storeId     String?
+  userId      String // cashier who processed this
+  createdAt   DateTime        @default(now())
+
+  tenant Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  store  Store?            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user   User              @relation(fields: [userId], references: [id])
+  items  TransactionItem[]
+
+  @@index([tenantId])
+  @@index([storeId])
+  @@index([tenantId, createdAt])
+  @@map("transactions")
+}
+
+model TransactionItem {
+  id            String @id @default(cuid())
+  transactionId String
+  productId     String
+  quantity      Int    @default(1)
+  unitPrice     Int
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product     Product     @relation(fields: [productId], references: [id])
+
+  @@map("transaction_items")
+}
