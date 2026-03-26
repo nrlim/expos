@@ -36,6 +36,21 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    label: 'Inventory',
+    href: '/dashboard/inventory',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z" />
+        <path fillRule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd" />
+      </svg>
+    ),
+    subItems: [
+      { label: 'Stock Overview', href: '/dashboard/inventory' },
+      { label: 'Adjustment', href: '/dashboard/inventory/adjustment' },
+      { label: 'Transfer', href: '/dashboard/inventory/transfer' }
+    ]
+  },
+  {
     label: 'Categories',
     href: '/dashboard/categories',
     icon: (
@@ -65,6 +80,21 @@ const NAV_ITEMS: NavItem[] = [
   },
 
   {
+    label: 'Reports',
+    href: '/dashboard/reports',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+      </svg>
+    ),
+    subItems: [
+      { label: 'Sales Overview', href: '/dashboard/reports' },
+      { label: 'Store Performance', href: '/dashboard/reports/stores' },
+      { label: 'Product Analytics', href: '/dashboard/reports/products' },
+      { label: 'Payment Methods', href: '/dashboard/reports/payments' },
+    ],
+  },
+  {
     label: 'Units',
     href: '/dashboard/units',
     icon: (
@@ -92,6 +122,21 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    label: 'User Management',
+    href: '/dashboard/users',
+    ownerOnly: true,
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+      </svg>
+    ),
+    subItems: [
+      { label: 'Users', href: '/dashboard/users', ownerOnly: true },
+      { label: 'Roles & Permission', href: '/dashboard/users/roles', ownerOnly: true },
+      { label: 'Delete Account Request', href: '/dashboard/users/deletion-requests', ownerOnly: true },
+    ]
+  },
+  {
     label: 'Settings',
     href: '/dashboard/settings',
     icon: (
@@ -102,7 +147,6 @@ const NAV_ITEMS: NavItem[] = [
     subItems: [
       { label: 'General Info', href: '/dashboard/settings' },
       { label: 'Locations & Stores', href: '/dashboard/settings/stores', ownerOnly: true },
-      { label: 'Team & Roles', href: '/dashboard/settings/users', ownerOnly: true },
     ]
   },
 ]

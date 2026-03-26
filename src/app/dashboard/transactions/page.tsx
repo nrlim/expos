@@ -61,7 +61,9 @@ export default async function TransactionsPage() {
                     </span>
                   </td>
                   <td className="text-slate-400">{tx.items.length}</td>
-                  <td className="font-medium text-slate-200">{formatCurrency(tx.totalAmount)}</td>
+                  <td className={`font-bold ${tx.type === 'REFUND' ? 'text-destructive' : 'text-emerald-400'}`}>
+                    {tx.type === 'REFUND' ? '-' : '+'}{formatCurrency(tx.totalAmount)}
+                  </td>
                   <td className="text-slate-400">{tx.user.username}</td>
                   <td className="text-slate-500 text-xs">
                     {new Intl.DateTimeFormat('en-GB', {

@@ -5,7 +5,7 @@ import type { JWTPayload } from 'jose'
 export interface SessionPayload extends JWTPayload {
   userId: string
   username: string
-  role: 'OWNER' | 'ADMIN' | 'CASHIER'
+  role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'CUSTOM'
   tenantId: string
   tenantSlug: string
   tenantName: string

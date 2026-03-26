@@ -17,6 +17,7 @@ enum Role {
   OWNER
   ADMIN
   CASHIER
+  CUSTOM
 }
 
 enum ProductStatus {
@@ -29,6 +30,14 @@ enum TransactionType {
   SALE
   REFUND
   ADJUSTMENT
+  TRANSFER
+}
+
+enum PaymentMethod {
+  CASH
+  QRIS
+  DEBIT
+  CREDIT
 }
 
 // ─── Tenant (Store / Business unit) ───────────────────────────────────────────
@@ -48,6 +57,7 @@ model Tenant {
   units        Unit[]
   attributes   Attribute[]
   warranties   Warranty[]
+  customRoles  CustomRole[]
 
   @@map("tenants")
 }
@@ -64,7 +74,8 @@ model Store {
 
   tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   inventories  Inventory[]
-  transactions Transaction[]
+  transactions       Transaction[] @relation("SourceStore")
+  targetTransactions Transaction[] @relation("TargetStore")
 
   @@unique([name, tenantId])
   @@index([tenantId])
@@ -114,17 +125,36 @@ model Brand {
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  password  String // bcrypt hash — never stored in plain text
-  role      Role     @default(CASHIER)
-  tenantId  String
-  createdAt DateTime @default(now())
+  id           String      @id @default(cuid())
+  username     String      @unique
+  password     String // bcrypt hash — never stored in plain text
+  role         Role        @default(CASHIER)
+  customRoleId String?
+  tenantId     String
+  createdAt    DateTime    @default(now())
 
   tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  customRole   CustomRole?   @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
 
   @@map("users")
+}
+
+// ─── Custom Roles ─────────────────────────────────────────────────────────────
+
+model CustomRole {
+  id          String   @id @default(cuid())
+  name        String
+  permissions String   @default("[]") // JSON string array of module access
+  tenantId    String
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users  User[]
+
+  @@unique([name, tenantId])
+  @@index([tenantId])
+  @@map("custom_roles")
 }
 
 // ─── Product ──────────────────────────────────────────────────────────────────
@@ -282,23 +312,27 @@ model Inventory {
 // ─── Transaction ──────────────────────────────────────────────────────────────
 
 model Transaction {
-  id          String          @id @default(cuid())
-  type        TransactionType @default(SALE)
-  totalAmount Int
-  notes       String?
-  tenantId    String
-  storeId     String?
-  userId      String // cashier who processed this
-  createdAt   DateTime        @default(now())
+  id            String          @id @default(cuid())
+  type          TransactionType @default(SALE)
+  paymentMethod PaymentMethod?  // nullable — legacy records may not have this
+  totalAmount   Int
+  notes         String?
+  tenantId      String
+  storeId       String?
+  targetStoreId String?
+  userId        String // cashier who processed this
+  createdAt     DateTime        @default(now())
 
-  tenant Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  store  Store?            @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  user   User              @relation(fields: [userId], references: [id])
-  items  TransactionItem[]
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  store       Store?            @relation("SourceStore", fields: [storeId], references: [id], onDelete: Cascade)
+  targetStore Store?            @relation("TargetStore", fields: [targetStoreId], references: [id])
+  user        User              @relation(fields: [userId], references: [id])
+  items       TransactionItem[]
 
   @@index([tenantId])
   @@index([storeId])
   @@index([tenantId, createdAt])
+  @@index([tenantId, paymentMethod])
   @@map("transactions")
 }
 

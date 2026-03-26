@@ -6,8 +6,15 @@ import { createUser, updateUser, deleteUser } from '@/app/actions/user'
 interface User {
   id: string
   username: string
-  role: 'OWNER' | 'ADMIN' | 'CASHIER'
+  role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'CUSTOM'
+  customRoleId?: string | null
+  customRole?: { id: string, name: string } | null
   createdAt: Date
+}
+
+interface CustomRole {
+  id: string
+  name: string
 }
 
 const PlusIcon = () => (
@@ -44,11 +51,12 @@ const ROLE_LABELS = {
   CASHIER: 'Cashier',
 }
 
-export function UserManager({ users, currentUserId }: { users: User[], currentUserId: string }) {
+export function UserManager({ users, currentUserId, customRoles }: { users: User[], currentUserId: string, customRoles: CustomRole[] }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState<'OWNER' | 'ADMIN' | 'CASHIER'>('CASHIER')
+  // We use string here to handle 'OWNER', 'ADMIN', 'CASHIER', or 'custom:ROleid'
+  const [roleSelection, setRoleSelection] = useState<string>('CASHIER')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
@@ -58,7 +66,7 @@ export function UserManager({ users, currentUserId }: { users: User[], currentUs
   const startEdit = (u: User) => {
     setEditingId(u.id)
     setUsername(u.username)
-    setRole(u.role)
+    setRoleSelection(u.role === 'CUSTOM' && u.customRoleId ? `custom:${u.customRoleId}` : u.role)
     setPassword('') // Don't pre-fill password
     setError(null)
   }
@@ -66,7 +74,7 @@ export function UserManager({ users, currentUserId }: { users: User[], currentUs
   const cancelEdit = () => {
     setEditingId(null)
     setUsername('')
-    setRole('CASHIER')
+    setRoleSelection('CASHIER')
     setPassword('')
     setError(null)
   }
@@ -78,7 +86,14 @@ export function UserManager({ users, currentUserId }: { users: User[], currentUs
     setPending(true); setError(null)
     const fd = new FormData()
     fd.set('username', username.trim())
-    fd.set('role', role)
+    
+    if (roleSelection.startsWith('custom:')) {
+      fd.set('role', 'CUSTOM')
+      fd.set('customRoleId', roleSelection.split('custom:')[1])
+    } else {
+      fd.set('role', roleSelection)
+    }
+
     if (password) fd.set('password', password)
 
     const result = editingId
@@ -152,10 +167,19 @@ export function UserManager({ users, currentUserId }: { users: User[], currentUs
 
             <div>
               <label htmlFor="role" className="field-label">System Role</label>
-              <select id="role" className="field-input bg-background" value={role} onChange={e => setRole(e.target.value as any)}>
-                <option value="CASHIER">Cashier (POS Only)</option>
-                <option value="ADMIN">Admin (Manage data & users)</option>
-                <option value="OWNER">Owner (Full control)</option>
+              <select id="role" className="field-input bg-background" value={roleSelection} onChange={e => setRoleSelection(e.target.value)}>
+                <optgroup label="System Roles">
+                  <option value="CASHIER">Cashier (POS Only)</option>
+                  <option value="ADMIN">Admin (Manage data & users)</option>
+                  <option value="OWNER">Owner (Full control)</option>
+                </optgroup>
+                {customRoles.length > 0 && (
+                  <optgroup label="Custom Roles">
+                    {customRoles.map(cr => (
+                      <option key={cr.id} value={`custom:${cr.id}`}>{cr.name}</option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </div>
 
@@ -186,9 +210,15 @@ export function UserManager({ users, currentUserId }: { users: User[], currentUs
 
         <div className="p-4 space-y-6 bg-card">
           {[
-            { role: 'OWNER', users: users.filter(u => u.role === 'OWNER') },
-            { role: 'ADMIN', users: users.filter(u => u.role === 'ADMIN') },
-            { role: 'CASHIER', users: users.filter(u => u.role === 'CASHIER') },
+            { role: 'OWNER', label: 'Owner', type: 'system', users: users.filter(u => u.role === 'OWNER') },
+            { role: 'ADMIN', label: 'Admin', type: 'system', users: users.filter(u => u.role === 'ADMIN') },
+            { role: 'CASHIER', label: 'Cashier', type: 'system', users: users.filter(u => u.role === 'CASHIER') },
+            ...customRoles.map(cr => ({
+               role: `custom:${cr.id}`,
+               label: cr.name,
+               type: 'custom',
+               users: users.filter(u => u.role === 'CUSTOM' && u.customRoleId === cr.id)
+            }))
           ].filter(g => g.users.length > 0).map(group => (
             <div key={group.role} className="relative">
               {/* Role Header */}
@@ -197,9 +227,10 @@ export function UserManager({ users, currentUserId }: { users: User[], currentUs
                   'shrink-0 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm ' +
                   (group.role === 'OWNER' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
                    group.role === 'ADMIN' ? 'bg-brand/10 text-brand border border-brand/20' :
+                   group.type === 'custom' ? 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20' :
                    'bg-slate-500/10 text-slate-400 border border-slate-500/20')
                 }>
-                  {ROLE_LABELS[group.role as keyof typeof ROLE_LABELS]}
+                  {group.label}
                 </span>
                 <span className="text-[10px] font-semibold text-muted-foreground">({group.users.length})</span>
               </div>

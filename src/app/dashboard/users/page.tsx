@@ -15,8 +15,13 @@ export default async function UsersPage() {
     where: { tenantId: session.tenantId },
     orderBy: { createdAt: 'asc' },
     select: {
-      id: true, username: true, role: true, createdAt: true,
+      id: true, username: true, role: true, customRoleId: true, createdAt: true,
     },
+  })
+
+  const customRoles = await prisma.customRole.findMany({
+    where: { tenantId: session.tenantId },
+    select: { id: true, name: true }
   })
 
   return (
@@ -25,7 +30,7 @@ export default async function UsersPage() {
         <h1 className="page-title">User Management</h1>
         <p className="page-subtitle">Manage system access for {users.length} team members.</p>
       </div>
-      <UserManager users={users} currentUserId={session.userId} />
+      <UserManager users={users} currentUserId={session.userId} customRoles={customRoles} />
     </div>
   )
 }

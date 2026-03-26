@@ -45,41 +45,36 @@ export default function RecentTransactions({ transactions }: Props) {
   }
 
   return (
-    <table className="data-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Type</th>
-          <th>Items</th>
-          <th>Amount</th>
-          <th>Cashier</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody>
+    <div className="flex flex-col">
+      <ul className="divide-y divide-border/40">
         {transactions.map((tx) => (
-          <tr key={tx.id}>
-            <td className="font-mono text-xs text-slate-500">{tx.id.slice(0, 8)}</td>
-            <td>
-              <span
-                className={
-                  tx.type === 'SALE'
-                    ? 'badge badge-success'
-                    : tx.type === 'REFUND'
-                    ? 'badge badge-danger'
-                    : 'badge badge-neutral'
-                }
-              >
-                {tx.type}
-              </span>
-            </td>
-            <td className="text-slate-400">{tx.items.length}</td>
-            <td className="font-medium text-slate-200">{formatCurrency(tx.totalAmount)}</td>
-            <td className="text-slate-400">{tx.user.username}</td>
-            <td className="text-slate-500 text-xs">{formatDate(tx.createdAt)}</td>
-          </tr>
+          <li key={tx.id} className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center ${tx.type === 'SALE' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
+                {tx.type === 'SALE' ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-foreground truncate">{tx.type === 'SALE' ? 'Sale' : 'Refund'} #{tx.id.slice(0, 8)}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{formatDate(tx.createdAt)} • {tx.items.length} items</p>
+              </div>
+            </div>
+            <div className="text-right shrink-0 ml-3">
+              <p className={`text-[13px] font-bold ${tx.type === 'REFUND' ? 'text-destructive' : 'text-emerald-400'}`}>
+                {tx.type === 'REFUND' ? '-' : '+'}{formatCurrency(tx.totalAmount)}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5"><span className="opacity-70">by</span> {tx.user.username}</p>
+            </div>
+          </li>
         ))}
-      </tbody>
-    </table>
+      </ul>
+    </div>
   )
 }

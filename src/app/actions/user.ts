@@ -9,7 +9,8 @@ import bcrypt from 'bcryptjs'
 const UserSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters').trim(),
   password: z.string().min(6, 'Password must be at least 6 characters').optional().or(z.literal('')),
-  role: z.enum(['OWNER', 'ADMIN', 'CASHIER']),
+  role: z.enum(['OWNER', 'ADMIN', 'CASHIER', 'CUSTOM']),
+  customRoleId: z.string().optional()
 })
 
 export async function createUser(formData: FormData) {
@@ -20,13 +21,14 @@ export async function createUser(formData: FormData) {
     username: formData.get('username'),
     password: formData.get('password'),
     role: formData.get('role'),
+    customRoleId: formData.get('customRoleId'),
   })
 
   if (!parsed.success) {
     return { success: false, error: 'Invalid input fields' }
   }
 
-  const { username, password, role } = parsed.data
+  const { username, password, role, customRoleId } = parsed.data
 
   // Security Focus: Strict OWNER privilege checks
   if (role === 'OWNER' && session.role !== 'OWNER') {
@@ -52,11 +54,12 @@ export async function createUser(formData: FormData) {
         username,
         password: hashedPassword,
         role,
+        customRoleId: role === 'CUSTOM' ? (customRoleId || null) : null,
         tenantId: session.tenantId,
       }
     })
 
-    revalidatePath('/dashboard/settings/users')
+    revalidatePath('/dashboard/users')
     return { success: true }
   } catch {
     return { success: false, error: 'Failed to create user' }
@@ -71,13 +74,14 @@ export async function updateUser(id: string, formData: FormData) {
     username: formData.get('username'),
     password: formData.get('password'),
     role: formData.get('role'),
+    customRoleId: formData.get('customRoleId'),
   })
 
   if (!parsed.success) {
     return { success: false, error: 'Invalid input fields' }
   }
 
-  const { username, password, role } = parsed.data
+  const { username, password, role, customRoleId } = parsed.data
 
   try {
     const target = await prisma.user.findFirst({
@@ -102,7 +106,11 @@ export async function updateUser(id: string, formData: FormData) {
       return { success: false, error: 'Username is already taken' }
     }
 
-    const updateData: any = { username, role }
+    const updateData: any = { 
+      username, 
+      role, 
+      customRoleId: role === 'CUSTOM' ? (customRoleId || null) : null 
+    }
     if (password && password.length > 0) {
       updateData.password = await bcrypt.hash(password, 10)
     }
@@ -112,7 +120,7 @@ export async function updateUser(id: string, formData: FormData) {
       data: updateData,
     })
 
-    revalidatePath('/dashboard/settings/users')
+    revalidatePath('/dashboard/users')
     return { success: true }
   } catch {
     return { success: false, error: 'Failed to update user' }

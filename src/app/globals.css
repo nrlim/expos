@@ -278,4 +278,37 @@
       linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
     background-position: top center;
   }
+
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-muted-foreground/20; }
 }
+
+/* ── Print Styles (PDF export via window.print()) ─────────────────────────── */
+@media print {
+  aside,
+  header,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  .card {
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  main {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .stat-card { break-inside: avoid; }
+
+  table { font-size: 9px !important; }
+}
+
