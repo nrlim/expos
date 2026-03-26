@@ -1,3 +1,0 @@
-﻿src/app/api/products/route.ts(85,9): error TS2353: Object literal may only specify known properties, and 'stock' does not exist in type 'Without<ProductCreateInput, ProductUncheckedCreateInput> & ProductUncheckedCreateInput'.
-src/app/dashboard/page.tsx(22,47): error TS2353: Object literal may only specify known properties, and 'stockStatus' does not exist in type 'ProductWhereInput'.
-src/app/dashboard/page.tsx(23,47): error TS2353: Object literal may only specify known properties, and 'stockStatus' does not exist in type 'ProductWhereInput'.
