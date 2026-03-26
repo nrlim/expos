@@ -30,14 +30,13 @@ export async function adjustStock(payload: FormData) {
 
     const { productId, storeId, quantityStr, notes } = parsed.data
     const quantity = parseInt(quantityStr, 10)
-    
+
     if (isNaN(quantity) || quantity === 0) {
       return { success: false, error: 'Quantity must be a non-zero number.' }
     }
 
     await prisma.$transaction(async (tx) => {
       // Find current inventory
-      // @ts-ignore
       let inv = await tx.inventory.findUnique({
         where: { productId_storeId: { productId, storeId } },
       })
@@ -45,7 +44,6 @@ export async function adjustStock(payload: FormData) {
       if (!inv) {
         if (quantity < 0) throw new Error('Cannot reduce stock below 0.')
         // Create if it doesn't exist
-        // @ts-ignore
         inv = await tx.inventory.create({
           data: {
             productId,
@@ -65,7 +63,6 @@ export async function adjustStock(payload: FormData) {
       }
 
       // Record transaction
-      // @ts-ignore
       await tx.transaction.create({
         data: {
           type: 'ADJUSTMENT',
@@ -131,7 +128,6 @@ export async function transferStock(payload: FormData) {
 
     await prisma.$transaction(async (tx) => {
       // Check source inventory
-      // @ts-ignore
       const sourceInv = await tx.inventory.findUnique({
         where: { productId_storeId: { productId, storeId: sourceStoreId } },
       })
@@ -141,20 +137,17 @@ export async function transferStock(payload: FormData) {
       }
 
       // Deduct from source
-      // @ts-ignore
       await tx.inventory.update({
         where: { productId_storeId: { productId, storeId: sourceStoreId } },
         data: { stock: { decrement: quantity } },
       })
 
       // Add to target
-      // @ts-ignore
       const targetInv = await tx.inventory.findUnique({
         where: { productId_storeId: { productId, storeId: targetStoreId } },
       })
 
       if (!targetInv) {
-        // @ts-ignore
         await tx.inventory.create({
           data: {
             productId,
@@ -163,7 +156,6 @@ export async function transferStock(payload: FormData) {
           }
         })
       } else {
-        // @ts-ignore
         await tx.inventory.update({
           where: { productId_storeId: { productId, storeId: targetStoreId } },
           data: { stock: { increment: quantity } },
@@ -171,7 +163,6 @@ export async function transferStock(payload: FormData) {
       }
 
       // Record transaction
-      // @ts-ignore
       await tx.transaction.create({
         data: {
           type: 'TRANSFER',
