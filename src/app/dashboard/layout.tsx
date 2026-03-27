@@ -1,4 +1,5 @@
 import { verifySession } from '@/lib/dal'
+import { getTenantPlan } from '@/lib/dal'
 import { prisma } from '@/lib/prisma'
 import Sidebar from '@/components/dashboard/Sidebar'
 import TopBar from '@/components/dashboard/TopBar'
@@ -10,17 +11,20 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const session = await verifySession()
-
-  // @ts-ignore
-  const stores = await prisma.store.findMany({
-    where: { tenantId: session.tenantId },
-    orderBy: { name: 'asc' }
-  })
+  const [stores, plan] = await Promise.all([
+    // @ts-ignore
+    prisma.store.findMany({
+      where: { tenantId: session.tenantId },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' }
+    }),
+    getTenantPlan(session.tenantId),
+  ])
 
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
       {/* Desktop sidebar — hidden on mobile via Sidebar's own class */}
-      <Sidebar session={session} />
+      <Sidebar session={session} plan={plan} />
 
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <TopBar session={session} stores={stores} />

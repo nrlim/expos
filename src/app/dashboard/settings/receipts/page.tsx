@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
-import { verifySession } from '@/lib/dal'
+import { verifySession, getTenantPlan } from '@/lib/dal'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import ReceiptBuilder from './ReceiptBuilder'
+import { PagePlanGate } from '@/components/PagePlanGate'
 
 export const metadata: Metadata = { title: 'Receipt Configuration | ex-POS' }
 
@@ -10,11 +11,14 @@ export default async function ReceiptSettingsPage() {
   const session = await verifySession()
   if (session.role !== 'OWNER' && session.role !== 'ADMIN') redirect('/403')
 
-  const stores = await prisma.store.findMany({
-    where: { tenantId: session.tenantId },
-    select: { id: true, name: true },
-    orderBy: { createdAt: 'asc' }
-  })
+  const [stores, plan] = await Promise.all([
+    prisma.store.findMany({
+      where: { tenantId: session.tenantId },
+      select: { id: true, name: true },
+      orderBy: { createdAt: 'asc' },
+    }),
+    getTenantPlan(session.tenantId),
+  ])
 
   return (
     <div className="animate-fade-in space-y-6 w-full">
@@ -23,7 +27,9 @@ export default async function ReceiptSettingsPage() {
         <p className="text-sm text-muted-foreground mt-1">Customize thermal receipt headers, footers, and printing rules per store.</p>
       </div>
 
-      <ReceiptBuilder stores={stores} />
+      <PagePlanGate feature="custom_branding" plan={plan}>
+        <ReceiptBuilder stores={stores} />
+      </PagePlanGate>
     </div>
   )
 }

@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 }
 
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { GlobalFeedbackProvider } from '@/components/feedback/GlobalFeedbackProvider'
 
 export default function RootLayout({
   children,
@@ -35,7 +36,9 @@ export default function RootLayout({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           scriptProps={{ suppressHydrationWarning: true } as any}
         >
-          {children}
+          <GlobalFeedbackProvider>
+            {children}
+          </GlobalFeedbackProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -2,6 +2,9 @@
 
 import React, { useState } from 'react'
 import { createUser, updateUser, deleteUser } from '@/app/actions/user'
+import { PlanLimitBanner } from '@/components/PlanGuard'
+import type { Plan } from '@/lib/plans'
+import { hasFeature } from '@/lib/plans'
 
 interface User {
   id: string
@@ -51,7 +54,7 @@ const ROLE_LABELS = {
   CASHIER: 'Cashier',
 }
 
-export function UserManager({ users, currentUserId, customRoles }: { users: User[], currentUserId: string, customRoles: CustomRole[] }) {
+export function UserManager({ users, currentUserId, customRoles, plan, maxUsers }: { users: User[], currentUserId: string, customRoles: CustomRole[], plan: Plan, maxUsers: number }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -61,6 +64,7 @@ export function UserManager({ users, currentUserId, customRoles }: { users: User
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
 
+  const atLimit = maxUsers !== Infinity && users.length >= maxUsers
   const reload = () => window.location.reload()
 
   const startEdit = (u: User) => {
@@ -122,15 +126,26 @@ export function UserManager({ users, currentUserId, customRoles }: { users: User
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
+    <div className="space-y-4">
+      {/* Plan limit banner */}
+      <PlanLimitBanner
+        feature="multi_user"
+        currentPlan={plan}
+        current={users.length}
+        max={maxUsers === Infinity ? 9999 : maxUsers}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
       {/* ── LEFT: Add/Edit Panel ── */}
       <div className="space-y-4">
-        <div className={`card p-5 space-y-4 ${editingId ? 'border border-brand/40 bg-brand/[0.02]' : ''}`}>
+        <div className={`card p-5 space-y-4 ${editingId ? 'border border-brand/40 bg-brand/[0.02]' : ''} ${atLimit && !editingId ? 'opacity-60 pointer-events-none' : ''}`}>
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-sm font-bold text-foreground">{editingId ? 'Edit User' : 'Add New User'}</h2>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                {editingId ? 'Update user details and roles.' : 'Create an account for a team member.'}
+                {atLimit && !editingId
+                  ? `Batas ${maxUsers} user tercapai. Upgrade paket untuk menambah staf.`
+                  : editingId ? 'Update user details and roles.' : 'Create an account for a team member.'}
               </p>
             </div>
             {editingId && (
@@ -166,7 +181,14 @@ export function UserManager({ users, currentUserId, customRoles }: { users: User
             </div>
 
             <div>
-              <label htmlFor="role" className="field-label">System Role</label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="role" className="field-label !mb-0">System Role</label>
+                {!hasFeature(plan, 'multi_user') && customRoles.length > 0 && (
+                  <span className="text-[9px] font-bold text-teal-600 px-1.5 py-0.5 rounded-sm bg-teal-600/10 uppercase">
+                    Upgrade to Unlock Custom Roles
+                  </span>
+                )}
+              </div>
               <select id="role" className="field-input bg-background" value={roleSelection} onChange={e => setRoleSelection(e.target.value)}>
                 <optgroup label="System Roles">
                   <option value="CASHIER">Cashier (POS Only)</option>
@@ -176,7 +198,9 @@ export function UserManager({ users, currentUserId, customRoles }: { users: User
                 {customRoles.length > 0 && (
                   <optgroup label="Custom Roles">
                     {customRoles.map(cr => (
-                      <option key={cr.id} value={`custom:${cr.id}`}>{cr.name}</option>
+                      <option key={cr.id} value={`custom:${cr.id}`} disabled={!hasFeature(plan, 'multi_user')}>
+                        {cr.name}
+                      </option>
                     ))}
                   </optgroup>
                 )}
@@ -185,7 +209,7 @@ export function UserManager({ users, currentUserId, customRoles }: { users: User
 
             {error && <p className="field-error mt-1">{error}</p>}
 
-            <button type="submit" disabled={pending} className={`btn-primary w-full flex items-center justify-center gap-1.5 mt-2 ${editingId ? 'bg-brand hover:bg-brand/90' : ''}`}>
+            <button type="submit" disabled={pending || (atLimit && !editingId)} className={`btn-primary w-full flex items-center justify-center gap-1.5 mt-2 ${editingId ? 'bg-brand hover:bg-brand/90' : ''}`}>
                {pending ? 'Saving...' : editingId ? 'Update User' : <><PlusIcon /> Add User</>}
             </button>
           </form>
@@ -291,6 +315,7 @@ export function UserManager({ users, currentUserId, customRoles }: { users: User
             </div>
           ))}
         </div>
+      </div>
       </div>
     </div>
   )

@@ -5,6 +5,11 @@ import { decrypt, SESSION_COOKIE } from '@/lib/session'
 // Public routes that do NOT require authentication
 const PUBLIC_PATHS = ['/login', '/register', '/403']
 
+// If explicitly set to 'false', the landing page is disabled and root acts as a protected route.
+if (process.env.NEXT_PUBLIC_ENABLE_LANDING_PAGE !== 'false') {
+  PUBLIC_PATHS.push('/', '/landing')
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 

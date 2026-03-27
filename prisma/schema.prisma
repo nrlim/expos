@@ -13,6 +13,12 @@ datasource db {
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
+enum SubscriptionPlan {
+  STARTER
+  BUSINESS
+  ENTERPRISE
+}
+
 enum Role {
   OWNER
   ADMIN
@@ -33,6 +39,14 @@ enum TransactionType {
   TRANSFER
 }
 
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
 enum PaymentMethod {
   CASH
   QRIS
@@ -43,10 +57,12 @@ enum PaymentMethod {
 // ─── Tenant (Store / Business unit) ───────────────────────────────────────────
 
 model Tenant {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
+  id             String           @id @default(cuid())
+  name           String
+  slug           String           @unique
+  plan           SubscriptionPlan @default(STARTER)
+  planExpiresAt  DateTime?        // null = no expiry (lifetime / manually managed)
+  createdAt      DateTime         @default(now())
 
   users        User[]
   products     Product[]
@@ -69,6 +85,8 @@ model Store {
   id        String   @id @default(cuid())
   name      String
   location  String?
+  phone     String?
+  isActive  Boolean  @default(true)
   tenantId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -138,6 +156,7 @@ model User {
   tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   transactions Transaction[]
   customRole   CustomRole?   @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
+  orderLogs    OrderLog[]
 
   @@map("users")
 }
@@ -317,6 +336,7 @@ model Transaction {
   id            String          @id @default(cuid())
   type          TransactionType @default(SALE)
   paymentMethod PaymentMethod?  // nullable — legacy records may not have this
+  orderStatus   OrderStatus     @default(PENDING)
   totalAmount   Int
   notes         String?
   tenantId      String
@@ -324,17 +344,20 @@ model Transaction {
   targetStoreId String?
   userId        String // cashier who processed this
   createdAt     DateTime        @default(now())
+  updatedAt     DateTime?       @updatedAt
 
   tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   store       Store?            @relation("SourceStore", fields: [storeId], references: [id], onDelete: Cascade)
   targetStore Store?            @relation("TargetStore", fields: [targetStoreId], references: [id])
   user        User              @relation(fields: [userId], references: [id])
   items       TransactionItem[]
+  orderLogs   OrderLog[]
 
   @@index([tenantId])
   @@index([storeId])
   @@index([tenantId, createdAt])
   @@index([tenantId, paymentMethod])
+  @@index([tenantId, orderStatus])
   @@map("transactions")
 }
 
@@ -349,6 +372,23 @@ model TransactionItem {
   product     Product     @relation(fields: [productId], references: [id])
 
   @@map("transaction_items")
+}
+
+// ─── Order Log (Timeline audit for Order Tracking) ────────────────────────────
+
+model OrderLog {
+  id            String      @id @default(cuid())
+  transactionId String
+  status        OrderStatus
+  note          String?
+  changedById   String
+  createdAt     DateTime    @default(now())
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  changedBy   User        @relation(fields: [changedById], references: [id])
+
+  @@index([transactionId])
+  @@map("order_logs")
 }
 
 // ─── Receipt Config ───────────────────────────────────────────────────────────

@@ -1,8 +1,9 @@
 'use server'
 
-import { verifySession } from '@/lib/dal'
+import { verifySession, getTenantPlan } from '@/lib/dal'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { canAddUser, hasFeature, planLabel } from '@/lib/plans'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 
@@ -29,6 +30,18 @@ export async function createUser(formData: FormData) {
   }
 
   const { username, password, role, customRoleId } = parsed.data
+
+  // Plan limit enforcement
+  const plan = await getTenantPlan(session.tenantId)
+  const currentCount = await prisma.user.count({ where: { tenantId: session.tenantId } })
+
+  if (!canAddUser(plan, currentCount)) {
+    return { success: false, error: `Batas maksimal user tercapai untuk paket ${planLabel(plan)}. Silakan upgrade.` }
+  }
+
+  if (!hasFeature(plan, 'multi_user') && role === 'CUSTOM') {
+    return { success: false, error: 'Paket Starter tidak mendukung Custom Role. Silakan upgrade ke paket Business.' }
+  }
 
   // Security Focus: Strict OWNER privilege checks
   if (role === 'OWNER' && session.role !== 'OWNER') {
@@ -82,6 +95,11 @@ export async function updateUser(id: string, formData: FormData) {
   }
 
   const { username, password, role, customRoleId } = parsed.data
+
+  const plan = await getTenantPlan(session.tenantId)
+  if (!hasFeature(plan, 'multi_user') && role === 'CUSTOM') {
+    return { success: false, error: 'Paket Starter tidak mendukung Custom Role. Silakan upgrade ke paket Business.' }
+  }
 
   try {
     const target = await prisma.user.findFirst({

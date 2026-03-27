@@ -3,9 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { SessionPayload } from '@/lib/types'
+import type { Plan, Feature } from '@/lib/plans'
+import { hasFeature, planLabel, FEATURE_LABELS } from '@/lib/plans'
+import { PlanLockBadge } from '@/components/PlanGuard'
 
 interface Props {
   session: SessionPayload
+  plan: Plan
 }
 
 type NavItem = {
@@ -13,7 +17,8 @@ type NavItem = {
   href: string
   icon: React.ReactNode
   ownerOnly?: boolean
-  subItems?: { label: string; href: string; ownerOnly?: boolean }[]
+  planFeature?: Feature // if set, badge + gate this item
+  subItems?: { label: string; href: string; ownerOnly?: boolean; planFeature?: Feature }[]
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -88,9 +93,9 @@ const NAV_ITEMS: NavItem[] = [
     ),
     subItems: [
       { label: 'Sales Overview', href: '/dashboard/reports' },
-      { label: 'Store Performance', href: '/dashboard/reports/stores' },
-      { label: 'Product Analytics', href: '/dashboard/reports/products' },
-      { label: 'Payment Methods', href: '/dashboard/reports/payments' },
+      { label: 'Store Performance', href: '/dashboard/reports/stores', planFeature: 'multi_store' },
+      { label: 'Product Analytics', href: '/dashboard/reports/products', planFeature: 'advanced_analytics' },
+      { label: 'Payment Methods', href: '/dashboard/reports/payments', planFeature: 'advanced_analytics' },
     ],
   },
   {
@@ -131,9 +136,20 @@ const NAV_ITEMS: NavItem[] = [
     ),
     subItems: [
       { label: 'Users', href: '/dashboard/users', ownerOnly: true },
-      { label: 'Roles & Permission', href: '/dashboard/users/roles', ownerOnly: true },
+      { label: 'Roles & Permission', href: '/dashboard/users/roles', ownerOnly: true, planFeature: 'multi_user' as const },
       { label: 'Delete Account Request', href: '/dashboard/users/deletion-requests', ownerOnly: true },
     ],
+  },
+  {
+    label: 'Order Monitor',
+    href: '/dashboard/order-monitor',
+    ownerOnly: false,
+    planFeature: 'order_tracking' as const,
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+      </svg>
+    ),
   },
   {
     label: 'Settings',
@@ -145,13 +161,13 @@ const NAV_ITEMS: NavItem[] = [
     ),
     subItems: [
       { label: 'General Info', href: '/dashboard/settings' },
-      { label: 'Locations & Stores', href: '/dashboard/settings/stores', ownerOnly: true },
-      { label: 'Receipt Config', href: '/dashboard/settings/receipts', ownerOnly: true },
+      { label: 'Locations & Stores', href: '/dashboard/settings/stores', ownerOnly: true, planFeature: 'multi_store' as const },
+      { label: 'Receipt Config', href: '/dashboard/settings/receipts', ownerOnly: true, planFeature: 'custom_branding' as const },
     ],
   },
 ]
 
-export default function Sidebar({ session }: Props) {
+export default function Sidebar({ session, plan }: Props) {
   const pathname = usePathname()
 
   // CASHIER role has no admin sidebar — they only access the POS view
@@ -167,11 +183,15 @@ export default function Sidebar({ session }: Props) {
         <span className="font-bold text-foreground tracking-tight">ex-POS</span>
       </div>
 
-      {/* Tenant info */}
+      {/* Tenant info + plan badge */}
       <div className="border-b border-border px-4 py-3 text-center">
         <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">Store</p>
         <p className="mt-0.5 text-sm font-bold text-foreground truncate">{session.tenantName}</p>
         <p className="text-[10px] font-mono text-muted-foreground truncate focus:outline-hidden">/{session.tenantSlug}</p>
+        <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-600/10 border border-teal-600/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+          <span className="text-[9px] font-bold uppercase tracking-widest text-teal-600">{planLabel(plan)}</span>
+        </div>
       </div>
 
       {/* Navigation */}
@@ -185,6 +205,7 @@ export default function Sidebar({ session }: Props) {
             item.href === '/dashboard'
               ? pathname === '/dashboard'
               : pathname.startsWith(item.href)
+          const isLocked = item.planFeature ? !hasFeature(plan, item.planFeature) : false
           return (
             <div key={item.href} className="flex flex-col">
               <Link
@@ -193,12 +214,16 @@ export default function Sidebar({ session }: Props) {
               >
                 {item.icon}
                 {item.label}
+                {isLocked && item.planFeature && (
+                  <PlanLockBadge requiredPlan={FEATURE_LABELS[item.planFeature].requiredPlan} />
+                )}
               </Link>
 
               {item.subItems && isActive && (
                 <div className="ml-[1.25rem] mt-0.5 border-l border-border/80 flex flex-col gap-0.5">
                   {item.subItems.map((sub) => {
                     if (sub.ownerOnly && session.role !== 'OWNER') return null
+                    const isSubLocked = sub.planFeature ? !hasFeature(plan, sub.planFeature) : false
 
                     const isSubActive =
                       sub.href === item.href
@@ -209,13 +234,16 @@ export default function Sidebar({ session }: Props) {
                       <Link
                         key={sub.href}
                         href={sub.href}
-                        className={`pl-4 py-1.5 text-[11px] font-semibold tracking-wide rounded-r-md transition-all ${
+                        className={`pl-4 py-1.5 text-[11px] font-semibold tracking-wide rounded-r-md transition-all flex items-center gap-1 ${
                           isSubActive
                             ? 'text-primary bg-primary/10 border-l border-primary -ml-[1px]'
                             : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
                         }`}
                       >
                         {sub.label}
+                        {isSubLocked && sub.planFeature && (
+                          <PlanLockBadge requiredPlan={FEATURE_LABELS[sub.planFeature].requiredPlan} />
+                        )}
                       </Link>
                     )
                   })}

@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import type { SessionPayload } from '@/lib/types'
+import type { Plan } from '@/lib/plans'
 
 // ─── Session Verification ─────────────────────────────────────────────────────
 
@@ -24,6 +25,22 @@ export const verifySession = cache(async (): Promise<SessionPayload> => {
  */
 export const getOptionalSession = cache(async (): Promise<SessionPayload | null> => {
   return getSession()
+})
+
+/**
+ * Returns the tenant's current subscription plan.
+ * Memoized per-request — safe to call multiple times.
+ */
+export const getTenantPlan = cache(async (tenantId: string): Promise<Plan> => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tenant: any = await (prisma.tenant as any).findUnique({
+    where: { id: tenantId },
+    select: { plan: true, planExpiresAt: true },
+  })
+  if (!tenant) return 'STARTER'
+  // Treat expired plans as STARTER
+  if (tenant.planExpiresAt && tenant.planExpiresAt < new Date()) return 'STARTER'
+  return (tenant.plan ?? 'STARTER') as Plan
 })
 
 // ─── Current User ─────────────────────────────────────────────────────────────

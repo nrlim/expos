@@ -1,16 +1,27 @@
 'use client'
 
-import React, { useState } from 'react'
-import { createStore, updateStore, deleteStore } from '@/app/actions/store'
+import React, { useState, useTransition } from 'react'
+import { createStore, updateStore, deleteStore, toggleStoreActive } from '@/app/actions/store'
+import type { Plan } from '@/lib/plans'
+import { PlanLimitBanner } from '@/components/PlanGuard'
 
 interface Store {
   id: string
   name: string
   location: string | null
+  phone: string | null
+  isActive: boolean
+  createdAt: Date
   _count: {
     inventories: number
     transactions: number
   }
+}
+
+interface StoreManagerProps {
+  stores: Store[]
+  plan: Plan
+  maxStores: number
 }
 
 const PlusIcon = () => (
@@ -34,19 +45,24 @@ const StoreIcon = () => (
   </svg>
 )
 
-export function StoreManager({ stores }: { stores: Store[] }) {
+export function StoreManager({ stores, plan, maxStores }: StoreManagerProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [name, setName] = useState('')
   const [location, setLocation] = useState('')
+  const [phone, setPhone] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [, startToggleTransition] = useTransition()
 
+  const atLimit = maxStores !== Infinity && stores.length >= maxStores
   const reload = () => window.location.reload()
 
   const startEdit = (s: Store) => {
     setEditingId(s.id)
     setName(s.name)
     setLocation(s.location || '')
+    setPhone(s.phone || '')
     setError(null)
   }
 
@@ -54,6 +70,7 @@ export function StoreManager({ stores }: { stores: Store[] }) {
     setEditingId(null)
     setName('')
     setLocation('')
+    setPhone('')
     setError(null)
   }
 
@@ -65,6 +82,7 @@ export function StoreManager({ stores }: { stores: Store[] }) {
     const fd = new FormData()
     fd.set('name', name.trim())
     if (location.trim()) fd.set('location', location.trim())
+    if (phone.trim()) fd.set('phone', phone.trim())
 
     const result = editingId
       ? await updateStore(editingId, fd)
@@ -89,103 +107,156 @@ export function StoreManager({ stores }: { stores: Store[] }) {
     }
   }
 
+  const handleToggleActive = (id: string, currentActive: boolean) => {
+    setTogglingId(id)
+    startToggleTransition(async () => {
+      const res = await toggleStoreActive(id, !currentActive)
+      if (!res.success) alert(res.error)
+      reload()
+      setTogglingId(null)
+    })
+  }
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
-      {/* ── LEFT: Add/Edit Panel ── */}
-      <div className="space-y-4">
-        <div className={`card p-5 space-y-4 ${editingId ? 'border border-brand/40 bg-brand/[0.02]' : ''}`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-foreground">{editingId ? 'Edit Store' : 'Add New Store'}</h2>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                {editingId ? 'Change branch details.' : 'Create a new physical or virtual branch.'}
-              </p>
+    <div className="space-y-4">
+      {/* Plan limit banner */}
+      <PlanLimitBanner
+        feature="multi_store"
+        currentPlan={plan}
+        current={stores.length}
+        max={maxStores === Infinity ? 9999 : maxStores}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
+        {/* ── LEFT: Add/Edit Panel ── */}
+        <div className="space-y-4">
+          <div className={`card p-5 space-y-4 ${editingId ? 'border border-primary/40 bg-primary/[0.02]' : ''} ${atLimit && !editingId ? 'opacity-60 pointer-events-none' : ''}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-foreground">{editingId ? 'Edit Store' : 'Add New Store'}</h2>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {atLimit && !editingId
+                    ? `Batas ${maxStores} store tercapai. Upgrade untuk menambah cabang.`
+                    : editingId ? 'Update branch details.' : 'Create a new physical or virtual branch.'}
+                </p>
+              </div>
+              {editingId && (
+                <button type="button" onClick={cancelEdit} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground">
+                  Cancel
+                </button>
+              )}
             </div>
-            {editingId && (
-              <button type="button" onClick={cancelEdit} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground">
-                Cancel
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div>
+                <label htmlFor="name" className="field-label">Store Name <span className="text-destructive">*</span></label>
+                <input id="name" className="field-input text-sm" placeholder="e.g. Toko Cabang Sudirman"
+                  value={name} onChange={e => setName(e.target.value)} required autoComplete="off" />
+              </div>
+
+              <div>
+                <label htmlFor="phone" className="field-label">Phone Number</label>
+                <input id="phone" type="tel" className="field-input text-sm" placeholder="e.g. 08123456789"
+                  value={phone} onChange={e => setPhone(e.target.value)} autoComplete="off" />
+              </div>
+
+              <div>
+                <label htmlFor="location" className="field-label">Location / Address</label>
+                <textarea id="location" rows={3} className="field-input text-sm resize-y" placeholder="Optional. Full address or city map link."
+                  value={location} onChange={e => setLocation(e.target.value)} />
+              </div>
+
+              {error && <p className="field-error mt-1">{error}</p>}
+
+              <button type="submit" disabled={pending || (atLimit && !editingId)} className={`btn-primary w-full flex items-center justify-center gap-1.5 mt-2 ${editingId ? 'bg-primary hover:bg-primary/90' : ''}`}>
+                {pending ? 'Saving...' : editingId ? 'Update Store' : <><PlusIcon /> Add Store</>}
               </button>
-            )}
+            </form>
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="name" className="field-label">Store Name <span className="text-destructive">*</span></label>
-              <input id="name" className="field-input text-sm" placeholder="e.g. Toko Cabang Sudirman"
-                value={name} onChange={e => setName(e.target.value)} required autoComplete="off" />
-            </div>
-
-            <div>
-              <label htmlFor="location" className="field-label">Location / Address</label>
-              <textarea id="location" rows={3} className="field-input text-sm resize-y" placeholder="Optional. Full address or city map link."
-                value={location} onChange={e => setLocation(e.target.value)} />
-            </div>
-
-            {error && <p className="field-error mt-1">{error}</p>}
-
-            <button type="submit" disabled={pending} className={`btn-primary w-full flex items-center justify-center gap-1.5 mt-2 ${editingId ? 'bg-brand hover:bg-brand/90' : ''}`}>
-               {pending ? 'Saving...' : editingId ? 'Update Store' : <><PlusIcon /> Add Store</>}
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* ── RIGHT: List of Stores ── */}
-      <div className="card overflow-hidden">
-        <div className="px-5 py-3 border-b border-border bg-muted/20 flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Store Locations</h2>
-          <span className="badge badge-neutral">{stores.length} stores</span>
         </div>
 
-        {stores.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-10 text-center text-muted-foreground">
-            <StoreIcon />
-            <p className="text-sm font-semibold mt-3 text-foreground">No stores configured.</p>
-            <p className="text-xs mt-1">Add a store on the left to start managing inventory.</p>
+        {/* ── RIGHT: List of Stores ── */}
+        <div className="card overflow-hidden">
+          <div className="px-5 py-3 border-b border-border bg-muted/20 flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Store Locations</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold text-muted-foreground">
+                {stores.filter(s => s.isActive).length} aktif / {stores.length} total
+              </span>
+              <span className="badge badge-neutral">{stores.length} stores</span>
+            </div>
           </div>
-        ) : (
-          <ul className="divide-y divide-border/60">
-            {stores.map((s) => (
-              <li key={s.id} className={editingId === s.id ? 'bg-brand/5' : ''}>
-                <div className="flex items-center gap-4 px-4 py-3 hover:bg-muted/10 transition-colors group">
-                  {/* Icon */}
-                  <div className="flex shrink-0 h-9 w-9 items-center justify-center rounded-md bg-stone-500/10 text-stone-500 font-bold ring-1 ring-stone-500/20 shadow-sm">
-                    <StoreIcon />
-                  </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0 flex flex-col">
-                    <span className="text-sm font-bold text-foreground truncate">{s.name}</span>
-                    <span className="text-[10px] text-muted-foreground mt-0.5 max-w-[80%] truncate">
-                      {s.location || 'No address provided'}
-                    </span>
-                  </div>
+          {stores.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-10 text-center text-muted-foreground">
+              <StoreIcon />
+              <p className="text-sm font-semibold mt-3 text-foreground">No stores configured.</p>
+              <p className="text-xs mt-1">Add a store on the left to start managing inventory.</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border/60">
+              {stores.map((s) => (
+                <li key={s.id} className={editingId === s.id ? 'bg-brand/5' : ''}>
+                  <div className="flex items-center gap-4 px-4 py-3.5 hover:bg-muted/10 transition-colors group">
+                    {/* Status toggle */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleActive(s.id, s.isActive)}
+                      disabled={togglingId === s.id}
+                      title={s.isActive ? 'Klik untuk nonaktifkan' : 'Klik untuk aktifkan'}
+                      className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-md ring-1 transition-colors ${
+                        s.isActive
+                          ? 'bg-teal-500/10 text-teal-600 ring-teal-500/20 hover:bg-teal-500/20'
+                          : 'bg-muted text-muted-foreground ring-border hover:bg-muted/80'
+                      } ${togglingId === s.id ? 'animate-pulse' : ''}`}
+                    >
+                      <StoreIcon />
+                    </button>
 
-                  {/* Stats */}
-                  <div className="shrink-0 flex items-center gap-2">
-                    {s._count.inventories > 0 && (
-                      <span className="text-[10px] font-semibold text-muted-foreground badge badge-neutral py-0 px-1.5">
-                        {s._count.inventories} SKUs
+                    {/* Info */}
+                    <div className="flex-1 min-w-0 flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-foreground truncate">{s.name}</span>
+                        {!s.isActive && (
+                          <span className="badge badge-neutral text-[9px] px-1.5">Nonaktif</span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                        {[s.location, s.phone].filter(Boolean).join(' · ') || 'No address provided'}
                       </span>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0 ml-4">
-                    <button type="button" title="Edit" onClick={() => startEdit(s)}
-                      className="flex shrink-0 h-7 w-7 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors">
-                      <EditIcon />
-                    </button>
-                    <button type="button" title="Delete" onClick={() => handleDelete(s.id, s.name)}
-                      className="flex shrink-0 h-7 w-7 items-center justify-center rounded-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors">
-                      <TrashIcon />
-                    </button>
+                    {/* Stats */}
+                    <div className="shrink-0 flex items-center gap-2">
+                      {s._count.inventories > 0 && (
+                        <span className="text-[10px] font-semibold text-muted-foreground badge badge-neutral py-0 px-1.5">
+                          {s._count.inventories} SKUs
+                        </span>
+                      )}
+                      {s._count.transactions > 0 && (
+                        <span className="text-[10px] font-semibold text-muted-foreground badge badge-neutral py-0 px-1.5">
+                          {s._count.transactions} txn
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
+                      <button type="button" title="Edit" onClick={() => startEdit(s)}
+                        className="flex shrink-0 h-7 w-7 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors">
+                        <EditIcon />
+                      </button>
+                      <button type="button" title="Delete" onClick={() => handleDelete(s.id, s.name)}
+                        className="flex shrink-0 h-7 w-7 items-center justify-center rounded-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors">
+                        <TrashIcon />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   )

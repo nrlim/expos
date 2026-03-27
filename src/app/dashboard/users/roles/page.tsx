@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
-import { verifySession } from '@/lib/dal'
+import { verifySession, getTenantPlan } from '@/lib/dal'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { RoleManager } from './components/RoleManager'
+import { PagePlanGate } from '@/components/PagePlanGate'
 
 export const AVAILABLE_PERMISSIONS = [
   { id: 'module:products', label: 'Manage Products' },
@@ -17,16 +18,19 @@ export const metadata: Metadata = { title: 'Roles & Permissions' }
 
 export default async function RolesPage() {
   const session = await verifySession()
-  
+
   if (session.role === 'CASHIER' || session.role === 'CUSTOM') {
     redirect('/dashboard/pos')
   }
 
-  const customRoles = await prisma.customRole.findMany({
-    where: { tenantId: session.tenantId },
-    include: { _count: { select: { users: true } } },
-    orderBy: { createdAt: 'desc' }
-  })
+  const [customRoles, plan] = await Promise.all([
+    prisma.customRole.findMany({
+      where: { tenantId: session.tenantId },
+      include: { _count: { select: { users: true } } },
+      orderBy: { createdAt: 'desc' },
+    }),
+    getTenantPlan(session.tenantId),
+  ])
 
   // Format array
   const formattedRoles = customRoles.map((r: any) => ({
@@ -43,7 +47,9 @@ export default async function RolesPage() {
         </div>
       </div>
 
-      <RoleManager customRoles={formattedRoles} permissionsList={AVAILABLE_PERMISSIONS} />
+      <PagePlanGate feature="multi_user" plan={plan}>
+        <RoleManager customRoles={formattedRoles} permissionsList={AVAILABLE_PERMISSIONS} />
+      </PagePlanGate>
     </div>
   )
 }
