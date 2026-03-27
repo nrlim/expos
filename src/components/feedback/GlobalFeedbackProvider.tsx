@@ -5,28 +5,34 @@ import { NotificationCard } from './NotificationCard'
 import { TopProgressBar } from './TopProgressBar'
 import { AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 
-export function GlobalFeedbackProvider({ children }: { children: React.ReactNode }) {
-  const notifications = useFeedbackStore((s) => s.notifications)
-  const stopRouting = useFeedbackStore((s) => s.stopRouting)
-  const [mounted, setMounted] = useState(false)
-  
+function RouteChangeListener() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const stopRouting = useFeedbackStore((s) => s.stopRouting)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Hook into Next.js router changes to stop the loader globally when new pages render
   useEffect(() => {
     stopRouting()
   }, [pathname, searchParams, stopRouting])
 
+  return null
+}
+
+export function GlobalFeedbackProvider({ children }: { children: React.ReactNode }) {
+  const notifications = useFeedbackStore((s) => s.notifications)
+  const [mounted, setMounted] = useState(false)
+  
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
     <>
+      <Suspense fallback={null}>
+        <RouteChangeListener />
+      </Suspense>
       <TopProgressBar />
       {children}
       
