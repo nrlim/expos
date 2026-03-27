@@ -6,6 +6,7 @@ import { logout } from '@/app/actions/auth'
 import type { SessionPayload } from '@/lib/types'
 import { StoreSwitcher } from './StoreSwitcher'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import MobileMenu from './MobileMenu'
 
 interface Props {
   session: SessionPayload
@@ -46,14 +47,40 @@ export default function TopBar({ session, stores = [] }: Props) {
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-6 shadow-sm">
-      {/* Left — breadcrumb */}
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-        <span className="text-foreground">{session.tenantName}</span>
-        <span>/</span>
-        <span>{session.username}</span>
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-3 sm:px-6 shadow-sm gap-2">
+      {/* Left — hamburger (mobile) + breadcrumb */}
+      <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+        {/* Hamburger — only renders for non-CASHIER, hides at lg */}
+        <MobileMenu session={session} />
+
+        {/* Logo mark — mobile only (lg has sidebar) */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-primary">
+            <span className="text-[10px] font-black text-primary-foreground">eP</span>
+          </div>
+        </div>
+
+        {/* Breadcrumb — hidden on xs, shown sm+ */}
+        <div className="hidden sm:flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground min-w-0">
+          <span className="text-foreground truncate max-w-[120px]">{session.tenantName}</span>
+          <span>/</span>
+          <span className="truncate max-w-[80px]">{session.username}</span>
+          <span
+            className={`ml-1 badge ${
+              session.role === 'OWNER'
+                ? 'badge-warning'
+                : session.role === 'ADMIN'
+                ? 'badge-brand'
+                : 'badge-neutral'
+            }`}
+          >
+            {session.role}
+          </span>
+        </div>
+
+        {/* Compact user badge on xs */}
         <span
-          className={`ml-2 badge ${
+          className={`sm:hidden badge ${
             session.role === 'OWNER'
               ? 'badge-warning'
               : session.role === 'ADMIN'
@@ -61,26 +88,25 @@ export default function TopBar({ session, stores = [] }: Props) {
               : 'badge-neutral'
           }`}
         >
-          {session.role}
+          {session.username}
         </span>
       </div>
 
       {/* Right — actions */}
-      <div className="flex items-center gap-3">
-        {/* Store Switcher — hidden on POS (handled inside POSClient) */}
-        {!isPOS && <StoreSwitcher stores={stores} />}
+      <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+        {/* Store Switcher — hidden on POS */}
+        {!isPOS && <div className="hidden sm:block"><StoreSwitcher stores={stores} /></div>}
 
         {/*
           POS / Dashboard toggle:
-          - CASHIER: button is hidden entirely (they have no dashboard access)
-          - ADMIN/OWNER on dashboard: show "Point of Sale" button
-          - ADMIN/OWNER on POS: show "← Dashboard" button
+          - CASHIER: button is hidden entirely
+          - On desktop shows label; on mobile shows icon only
         */}
         {!isCashier && (
           <button
             id="btn-pos-toggle"
             onClick={handlePOSToggle}
-            className={`inline-flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+            className={`inline-flex items-center gap-1.5 rounded-sm px-2 sm:px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
               isPOS
                 ? 'border border-border bg-background text-foreground hover:bg-muted'
                 : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
@@ -89,23 +115,24 @@ export default function TopBar({ session, stores = [] }: Props) {
             {isPOS ? (
               <>
                 <ArrowLeftIcon />
-                Dashboard
+                <span className="hidden sm:inline">Dashboard</span>
               </>
             ) : (
               <>
                 <POSIcon />
-                Point of Sale
+                <span className="hidden sm:inline">Point of Sale</span>
               </>
             )}
           </button>
         )}
 
         <ThemeToggle />
+
         <button
           id="btn-logout"
           onClick={handleLogout}
           disabled={pending}
-          className="btn-ghost text-xs disabled:opacity-60"
+          className="btn-ghost text-xs disabled:opacity-60 hidden sm:inline-flex"
         >
           {pending ? 'Signing out...' : 'Sign Out'}
         </button>

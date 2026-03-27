@@ -31,13 +31,13 @@ const TrashIcon = () => (
 const MinusIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-    className="h-3 w-3"><line x1="5" y1="12" x2="19" y2="12" /></svg>
+    className="h-3.5 w-3.5"><line x1="5" y1="12" x2="19" y2="12" /></svg>
 )
 
 const PlusIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-    className="h-3 w-3">
+    className="h-3.5 w-3.5">
     <line x1="12" y1="5" x2="12" y2="19" />
     <line x1="5" y1="12" x2="19" y2="12" />
   </svg>
@@ -67,10 +67,10 @@ const LoaderIcon = () => (
   </svg>
 )
 
-const ShoppingCartIcon = () => (
+const ShoppingCartIcon = ({ className = 'h-10 w-10' }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-    className="h-10 w-10">
+    className={className}>
     <circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" />
     <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
   </svg>
@@ -117,6 +117,14 @@ const GridIcon = () => (
     className="h-5 w-5">
     <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
     <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+  </svg>
+)
+
+const ChevronUpIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    className="h-4 w-4">
+    <polyline points="18 15 12 9 6 15" />
   </svg>
 )
 
@@ -171,8 +179,8 @@ function CategorySidebar({
   ]
 
   return (
-    <aside className="flex w-[82px] shrink-0 flex-col overflow-y-auto border-r border-border bg-card">
-      <div className="flex flex-col gap-1 p-2">
+    <aside className="flex w-[72px] md:w-[82px] shrink-0 flex-col overflow-y-auto border-r border-border bg-card">
+      <div className="flex flex-col gap-1 p-1.5 md:p-2">
         {allCategories.map((cat) => {
           const isActive = active === cat.name || (cat.id === 'ALL' && active === 'ALL')
           const initials = cat.name === 'All' ? '★' : cat.name.slice(0, 2).toUpperCase()
@@ -182,40 +190,30 @@ function CategorySidebar({
               key={cat.id}
               id={`cat-btn-${cat.id}`}
               onClick={() => onSelect(cat.id === 'ALL' ? 'ALL' : cat.name)}
-              className={`group flex flex-col items-center gap-1.5 rounded-sm border px-1 py-2.5 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+              className={`group flex flex-col items-center gap-1 rounded-sm border px-1 py-2 transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
                 isActive
                   ? 'border-primary bg-primary/10 shadow-sm'
                   : 'border-transparent hover:border-border hover:bg-muted/60'
               }`}
             >
-              {/* Category image or letter avatar */}
               <div
-                className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-sm border transition-colors ${
+                className={`flex h-9 w-9 md:h-10 md:w-10 shrink-0 items-center justify-center overflow-hidden rounded-sm border transition-colors ${
                   isActive
                     ? 'border-primary/30 bg-primary/5'
                     : 'border-border/60 bg-muted/50 group-hover:border-primary/30'
                 }`}
               >
                 {cat.imageUrl ? (
-                  <img
-                    src={cat.imageUrl}
-                    alt={cat.name}
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={cat.imageUrl} alt={cat.name} className="h-full w-full object-cover" />
                 ) : cat.name === 'All' ? (
                   <GridIcon />
                 ) : (
-                  <span
-                    className={`text-sm font-black ${
-                      isActive ? 'text-primary' : 'text-muted-foreground'
-                    }`}
-                  >
+                  <span className={`text-sm font-black ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
                     {initials}
                   </span>
                 )}
               </div>
 
-              {/* Label */}
               <span
                 className={`w-full text-center text-[9px] font-bold leading-tight tracking-wide line-clamp-2 ${
                   isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
@@ -243,8 +241,8 @@ function VariantModal({
   onClose: () => void
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-md rounded-sm border border-border bg-card shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-md rounded-t-lg sm:rounded-sm border border-border bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -252,7 +250,7 @@ function VariantModal({
             </p>
             <h2 className="mt-0.5 text-sm font-bold text-foreground">{product.name}</h2>
           </div>
-          <button onClick={onClose} className="btn-ghost p-1.5" id="btn-close-variant-modal">
+          <button onClick={onClose} className="btn-ghost p-1.5 min-h-[44px] min-w-[44px]" id="btn-close-variant-modal">
             <XIcon size="md" />
           </button>
         </div>
@@ -291,12 +289,12 @@ function VariantModal({
         </div>
 
         <div className="flex gap-2 border-t border-border px-5 py-4">
-          <button onClick={onClose} className="btn-ghost flex-1" id="btn-variant-cancel">
+          <button onClick={onClose} className="btn-ghost flex-1 min-h-[44px]" id="btn-variant-cancel">
             Cancel
           </button>
           <button
             onClick={() => onConfirm(product)}
-            className="btn-primary flex-1 justify-center"
+            className="btn-primary flex-1 justify-center min-h-[44px]"
             id="btn-variant-add"
           >
             Add to Cart
@@ -339,9 +337,9 @@ function PaymentModal({
   ]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-lg rounded-sm border border-border bg-card shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-lg rounded-t-lg sm:rounded-sm border border-border bg-card shadow-2xl max-h-[90dvh] flex flex-col">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4 shrink-0">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               Process Payment
@@ -350,12 +348,12 @@ function PaymentModal({
               Grand Total: {formatIDR(discountedTotal)}
             </h2>
           </div>
-          <button onClick={onClose} id="btn-close-payment-modal" className="btn-ghost p-1.5">
+          <button onClick={onClose} id="btn-close-payment-modal" className="btn-ghost p-1.5 min-h-[44px] min-w-[44px]">
             <XIcon size="md" />
           </button>
         </div>
 
-        <div className="px-5 py-4 space-y-5">
+        <div className="px-5 py-4 space-y-5 overflow-y-auto flex-1">
           <div>
             <p className="field-label mb-2">Payment Method</p>
             <div className="grid grid-cols-4 gap-2">
@@ -364,7 +362,7 @@ function PaymentModal({
                   key={id}
                   id={`btn-pay-${id.toLowerCase()}`}
                   onClick={() => setMethod(id)}
-                  className={`rounded-sm border py-2.5 text-xs font-semibold transition-colors ${
+                  className={`rounded-sm border py-3 text-xs font-semibold transition-colors min-h-[44px] ${
                     method === id
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
@@ -384,12 +382,12 @@ function PaymentModal({
                 type="number" min="0" max="100"
                 value={discount}
                 onChange={(e) => setDiscount(Number(e.target.value))}
-                className="field-input mt-1"
+                className="field-input mt-1 min-h-[44px]"
               />
             </div>
             <div>
               <p className="field-label">After Discount</p>
-              <p className="mt-1 flex h-8 items-center text-sm font-bold text-foreground">
+              <p className="mt-1 flex h-11 items-center text-sm font-bold text-foreground">
                 {formatIDR(discountedTotal)}
               </p>
             </div>
@@ -403,7 +401,7 @@ function PaymentModal({
                 type="number" min="0"
                 value={paid}
                 onChange={(e) => setPaid(Number(e.target.value))}
-                className={`field-input mt-1 ${isInsufficient ? 'border-destructive ring-1 ring-destructive' : ''}`}
+                className={`field-input mt-1 min-h-[44px] ${isInsufficient ? 'border-destructive ring-1 ring-destructive' : ''}`}
               />
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {QUICK_CASH.map((v) => (
@@ -411,7 +409,7 @@ function PaymentModal({
                     key={v}
                     id={`btn-quickcash-${v}`}
                     onClick={() => setPaid((prev) => prev + v)}
-                    className="rounded-sm border border-border bg-secondary px-2 py-1 text-[10px] font-semibold text-secondary-foreground hover:border-primary/60 hover:bg-primary/10 hover:text-primary transition-colors"
+                    className="rounded-sm border border-border bg-secondary px-2 py-2 text-[10px] font-semibold text-secondary-foreground hover:border-primary/60 hover:bg-primary/10 hover:text-primary transition-colors min-h-[36px]"
                   >
                     +{(v / 1000).toFixed(0)}K
                   </button>
@@ -419,7 +417,7 @@ function PaymentModal({
                 <button
                   id="btn-quickcash-exact"
                   onClick={() => setPaid(discountedTotal)}
-                  className="rounded-sm border border-primary/40 bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary hover:bg-primary/20 transition-colors"
+                  className="rounded-sm border border-primary/40 bg-primary/10 px-2 py-2 text-[10px] font-bold text-primary hover:bg-primary/20 transition-colors min-h-[36px]"
                 >
                   Exact
                 </button>
@@ -444,22 +442,22 @@ function PaymentModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. Customer request, special conditions..."
-              className="field-input mt-1"
+              className="field-input mt-1 min-h-[44px]"
             />
           </div>
         </div>
 
-        <div className="flex gap-2 border-t border-border px-5 py-4">
-          <button onClick={onClose} disabled={isPending} className="btn-ghost flex-1" id="btn-payment-cancel">
+        <div className="flex gap-2 border-t border-border px-5 py-4 shrink-0">
+          <button onClick={onClose} disabled={isPending} className="btn-ghost flex-1 min-h-[44px]" id="btn-payment-cancel">
             Cancel
           </button>
           <button
             onClick={() => onConfirm(method, paid, discount, notes)}
             disabled={isPending || (method === 'CASH' && isInsufficient)}
             id="btn-payment-confirm"
-            className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-success px-4 py-2 text-sm font-bold text-success-foreground shadow-sm hover:bg-success/90 disabled:opacity-50 disabled:pointer-events-none transition-colors"
+            className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-success px-4 py-3 text-sm font-bold text-success-foreground shadow-sm hover:bg-success/90 disabled:opacity-50 disabled:pointer-events-none transition-colors min-h-[44px]"
           >
-            {isPending ? <><LoaderIcon /> Processing...</> : 'Confirm Payment'}
+            {isPending ? <><LoaderIcon />Processing...</> : 'Confirm Payment'}
           </button>
         </div>
       </div>
@@ -479,8 +477,8 @@ function SuccessModal({
   onClose: () => void
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-sm rounded-sm border border-border bg-card p-8 shadow-2xl text-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-sm rounded-t-lg sm:rounded-sm border border-border bg-card p-8 shadow-2xl text-center">
         <div className="flex justify-center mb-4"><CheckCircleIcon /></div>
         <h2 className="text-lg font-bold text-foreground">Payment Successful</h2>
         <p className="mt-1 text-xs text-muted-foreground font-mono">
@@ -495,7 +493,7 @@ function SuccessModal({
         <button
           id="btn-success-close"
           onClick={onClose}
-          className="btn-primary mt-6 w-full justify-center text-sm py-2.5"
+          className="btn-primary mt-6 w-full justify-center text-sm py-3 min-h-[44px]"
         >
           New Transaction
         </button>
@@ -519,7 +517,7 @@ function ProductCard({ product, onAdd }: { product: POSProduct; onAdd: (p: POSPr
       disabled={stock === 0}
       className={`group relative flex flex-col rounded-sm border bg-card text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:cursor-not-allowed ${
         stock > 0
-          ? 'border-border hover:border-primary/50 hover:shadow-md hover:shadow-primary/5 hover:-translate-y-0.5'
+          ? 'border-border hover:border-primary/50 hover:shadow-md hover:shadow-primary/5 active:scale-[0.98]'
           : 'border-border/40'
       }`}
     >
@@ -555,36 +553,197 @@ function ProductCard({ product, onAdd }: { product: POSProduct; onAdd: (p: POSPr
       </div>
 
       {/* Info */}
-      <div className="flex flex-1 flex-col p-2.5">
-        <p className="line-clamp-1 text-[11px] font-bold text-foreground leading-tight">{product.name}</p>
-        <p className="line-clamp-1 text-[10px] text-muted-foreground">{product.modelName}</p>
+      <div className="flex flex-1 flex-col p-2">
+        <p className="line-clamp-2 text-[11px] font-bold text-foreground leading-tight">{product.name}</p>
+        <p className="line-clamp-1 text-[10px] text-muted-foreground mt-0.5">{product.modelName}</p>
 
-        {hasVariants && (
-          <div className="mt-1 flex flex-wrap gap-1">
-            {product.attributeValues.slice(0, 2).map(({ attribute, attributeValue }) => (
-              <span
-                key={attribute.id}
-                className="rounded-none border border-border/80 bg-secondary/80 px-1 py-0.5 text-[9px] font-semibold text-secondary-foreground"
-              >
-                {attribute.name}: {attributeValue.value}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-auto flex items-end justify-between pt-2">
+        <div className="mt-auto flex items-end justify-between pt-1.5">
           <div>
             <p className="text-xs font-black text-foreground leading-none">{formatIDR(displayPrice)}</p>
             <p className={`mt-0.5 text-[9px] font-semibold ${isLowStock ? 'text-warning' : 'text-muted-foreground'}`}>
-              {stock} {product.unit?.shortName ?? 'pcs'} left
+              {stock} left
             </p>
           </div>
-          <span className="rounded-none border border-border/50 bg-muted/50 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-muted-foreground">
+          <span className="rounded-none border border-border/50 bg-muted/50 px-1 py-0.5 text-[9px] font-semibold uppercase text-muted-foreground">
             {product.condition}
           </span>
         </div>
       </div>
     </button>
+  )
+}
+
+// ─── Cart Panel Content ───────────────────────────────────────────────────────
+
+function CartPanelContent({
+  cart,
+  updateQty,
+  removeItem,
+  clearCart,
+  subtotal,
+  grandTotal,
+  checkoutError,
+  onCheckout,
+  session,
+  activeStoreId,
+}: {
+  cart: CartItem[]
+  updateQty: (id: string, delta: number) => void
+  removeItem: (id: string) => void
+  clearCart: () => void
+  subtotal: number
+  grandTotal: number
+  checkoutError: string | null
+  onCheckout: () => void
+  session: Props['session']
+  activeStoreId: string
+}) {
+  const TAX_RATE = 0
+
+  return (
+    <>
+      {/* Cart items */}
+      <div className="flex-1 overflow-y-auto">
+        {cart.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground/40 p-6">
+            <ShoppingCartIcon />
+            <div className="text-center">
+              <p className="text-sm font-medium">Cart is empty</p>
+              <p className="text-xs mt-1">Tap a product to add items</p>
+            </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-border/60">
+            {cart.map((item) => {
+              const stock = item.product.storeInventory?.stock ?? 0
+              return (
+                <div
+                  key={item.product.id}
+                  className="flex items-start gap-2.5 px-4 py-3 hover:bg-muted/20 transition-colors"
+                >
+                  {/* Thumbnail */}
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-sm bg-muted/50">
+                    {item.product.imageUrl ? (
+                      <img src={item.product.imageUrl} alt={item.product.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
+                        <PackageIcon className="h-5 w-5" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info + qty */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-bold text-foreground leading-tight line-clamp-1">
+                      {item.product.name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground line-clamp-1">
+                      {item.product.modelName}
+                    </p>
+                    {/* Touch-friendly qty controls — min 44px */}
+                    <div className="mt-1.5 flex items-center gap-1">
+                      <button
+                        id={`btn-qty-minus-${item.product.id}`}
+                        onClick={() => updateQty(item.product.id, -1)}
+                        className="flex h-7 w-7 items-center justify-center rounded-sm border border-border bg-background hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                      >
+                        <MinusIcon />
+                      </button>
+                      <span className="min-w-[28px] text-center text-xs font-bold text-foreground">
+                        {item.quantity}
+                      </span>
+                      <button
+                        id={`btn-qty-plus-${item.product.id}`}
+                        onClick={() => updateQty(item.product.id, 1)}
+                        disabled={item.quantity >= stock}
+                        className="flex h-7 w-7 items-center justify-center rounded-sm border border-border bg-background hover:border-primary/50 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                      >
+                        <PlusIcon />
+                      </button>
+                      <span className="text-[9px] text-muted-foreground">/ {stock}</span>
+                    </div>
+                  </div>
+
+                  {/* Price + remove */}
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <p className="text-xs font-bold text-foreground">
+                      {formatIDR(item.unitPrice * item.quantity)}
+                    </p>
+                    <p className="text-[9px] text-muted-foreground">
+                      {formatIDR(item.unitPrice)} each
+                    </p>
+                    <button
+                      id={`btn-remove-${item.product.id}`}
+                      onClick={() => removeItem(item.product.id)}
+                      className="rounded-sm p-1 text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <TrashIcon />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Summary + checkout */}
+      <div className="border-t border-border bg-muted/10 px-4 py-4 shrink-0">
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>Subtotal ({cart.reduce((s, i) => s + i.quantity, 0)} items)</span>
+            <span className="font-medium text-foreground">{formatIDR(subtotal)}</span>
+          </div>
+          {TAX_RATE > 0 && (
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>PPN ({(TAX_RATE * 100).toFixed(0)}%)</span>
+              <span className="font-medium text-foreground">{formatIDR(Math.round(subtotal * TAX_RATE))}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-3 flex items-center justify-between rounded-sm border border-border bg-background px-3 py-2.5">
+          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Grand Total
+          </span>
+          <span className="text-xl font-black text-foreground">{formatIDR(grandTotal)}</span>
+        </div>
+
+        {checkoutError && (
+          <p className="mt-2 text-[11px] text-destructive font-medium">{checkoutError}</p>
+        )}
+
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button
+            id="btn-cancel-cart"
+            onClick={clearCart}
+            disabled={cart.length === 0}
+            className="btn-ghost border border-border text-xs py-3 min-h-[44px] disabled:opacity-40"
+          >
+            Cancel
+          </button>
+          <button
+            id="btn-checkout"
+            onClick={onCheckout}
+            disabled={cart.length === 0 || !activeStoreId}
+            className="flex items-center justify-center gap-2 rounded-sm bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors min-h-[44px]"
+          >
+            Pay / Checkout
+          </button>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between">
+          <p className="text-[9px] text-muted-foreground">
+            Cashier: <span className="font-semibold">{session.username}</span>
+          </p>
+          <p className="text-[9px] text-muted-foreground font-mono">
+            {new Date().toLocaleDateString('id-ID', {
+              day: '2-digit', month: 'short', year: 'numeric',
+            })}
+          </p>
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -606,14 +765,23 @@ export function POSClient({ session, stores, categories }: Props) {
   const [isPending, startTransition] = useTransition()
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
+  // Mobile cart sheet state
+  const [mobileCartOpen, setMobileCartOpen] = useState(false)
+  // Store picker dropdown
+  const [storeDropdownOpen, setStoreDropdownOpen] = useState(false)
+
   // ── For ADMIN/OWNER: hide main sidebar when on POS, restore on unmount ──
   const isCashier = session.role === 'CASHIER'
   useEffect(() => {
-    if (isCashier) return // CASHIER has no sidebar (returns null from Sidebar component)
-    const sidebar = document.querySelector('aside') as HTMLElement | null
+    if (isCashier) return
+    const sidebar = document.querySelector('aside.hidden.lg\\:flex') as HTMLElement | null
     if (sidebar) sidebar.style.display = 'none'
+    // Also hide the bottom nav to give POS full screen
+    const bottomNav = document.querySelector('nav[aria-label="Bottom navigation"]') as HTMLElement | null
+    if (bottomNav) bottomNav.style.display = 'none'
     return () => {
       if (sidebar) sidebar.style.display = ''
+      if (bottomNav) bottomNav.style.display = ''
     }
   }, [isCashier])
 
@@ -650,6 +818,7 @@ export function POSClient({ session, stores, categories }: Props) {
       if (e.key === 'Escape') {
         setVariantProduct(null)
         setShowPayment(false)
+        setMobileCartOpen(false)
       }
     }
     window.addEventListener('keydown', handler)
@@ -717,6 +886,7 @@ export function POSClient({ session, stores, categories }: Props) {
   const TAX_RATE = 0
   const taxAmount = Math.round(subtotal * TAX_RATE)
   const grandTotal = subtotal + taxAmount
+  const cartCount = cart.reduce((s, i) => s + i.quantity, 0)
 
   // ── Checkout ──
   const handleCheckout = (
@@ -742,6 +912,7 @@ export function POSClient({ session, stores, categories }: Props) {
       })
       if (result.success) {
         setShowPayment(false)
+        setMobileCartOpen(false)
         setCart([])
         setSearch('')
         setSuccessInfo({ id: result.transactionId!, change: result.change ?? 0 })
@@ -791,6 +962,63 @@ export function POSClient({ session, stores, categories }: Props) {
         />
       )}
 
+      {/* ── Mobile Cart Sheet ── */}
+      {mobileCartOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+            onClick={() => setMobileCartOpen(false)}
+          />
+          {/* Sheet */}
+          <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col bg-card border-t border-border rounded-t-xl shadow-2xl md:hidden animate-slide-up"
+            style={{ maxHeight: '80dvh' }}>
+            {/* Sheet handle */}
+            <div className="flex h-10 shrink-0 items-center justify-between px-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-1 rounded-full bg-border mx-auto" />
+                <p className="text-xs font-bold text-foreground">Transaction Cart</p>
+                {cartCount > 0 && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-black text-primary-foreground">
+                    {cartCount}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {cart.length > 0 && (
+                  <button
+                    id="btn-clear-cart-mobile"
+                    onClick={clearCart}
+                    className="flex items-center gap-1 rounded-sm px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  >
+                    <XIcon />Clear
+                  </button>
+                )}
+                <button
+                  onClick={() => setMobileCartOpen(false)}
+                  className="btn-ghost p-1.5"
+                  id="btn-close-mobile-cart"
+                >
+                  <XIcon size="md" />
+                </button>
+              </div>
+            </div>
+            <CartPanelContent
+              cart={cart}
+              updateQty={updateQty}
+              removeItem={removeItem}
+              clearCart={clearCart}
+              subtotal={subtotal}
+              grandTotal={grandTotal}
+              checkoutError={checkoutError}
+              onCheckout={() => { setCheckoutError(null); setMobileCartOpen(false); setShowPayment(true) }}
+              session={session}
+              activeStoreId={activeStoreId}
+            />
+          </div>
+        </>
+      )}
+
       {/* ── 3-Column POS Layout ── */}
       <div className="flex h-full w-full overflow-hidden">
 
@@ -802,74 +1030,165 @@ export function POSClient({ session, stores, categories }: Props) {
         />
 
         {/* ── COL 2: Product Gallery ── */}
-        <div className="flex flex-1 flex-col overflow-hidden border-r border-border">
+        <div className="flex flex-1 flex-col overflow-hidden border-r border-border md:border-r-0">
 
-          {/* Top bar: Store + Search */}
-          <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-2.5">
-            {/* Store selector */}
-            <select
-              id="pos-store-select"
-              value={activeStoreId}
-              onChange={(e) => handleStoreChange(e.target.value)}
-              className="h-8 rounded-sm border border-border bg-background px-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary shrink-0 max-w-[160px]"
-            >
-              {stores.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
+          {/* ── Enhanced POS Toolbar ── */}
+          <div className="flex flex-col border-b border-border bg-card">
+            <div className="flex items-stretch gap-0 h-12">
 
-            {/* Search */}
-            <div className="relative flex-1">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">
-                <SearchIcon />
-              </span>
-              <input
-                ref={searchInputRef}
-                id="pos-search"
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={`Search in ${categoryFilter === 'ALL' ? 'all categories' : categoryFilter}... (Press / to focus)`}
-                className="field-input pl-8 pr-4"
-              />
+              {/* Store Dropdown — custom popover */}
+              <div className="relative shrink-0">
+                <button
+                  id="pos-store-dropdown-btn"
+                  onClick={() => setStoreDropdownOpen((v) => !v)}
+                  className={`flex h-full items-center gap-2 border-r border-border px-3 text-xs font-semibold transition-colors min-w-[130px] md:min-w-[155px] ${
+                    storeDropdownOpen
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-card hover:bg-muted/60 text-foreground'
+                  }`}
+                >
+                  {/* Store icon */}
+                  <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-sm ${
+                    storeDropdownOpen ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                  </span>
+                  <span className="flex-1 truncate text-left">{activeStore?.name ?? 'Select store'}</span>
+                  {/* Chevron */}
+                  <svg xmlns="http://www.w3.org/2000/svg" className={`h-3.5 w-3.5 shrink-0 transition-transform ${
+                    storeDropdownOpen ? 'rotate-180' : ''
+                  }`} viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Panel */}
+                {storeDropdownOpen && (
+                  <>
+                    {/* Invisible click-away backdrop */}
+                    <div
+                      className="fixed inset-0 z-20"
+                      onClick={() => setStoreDropdownOpen(false)}
+                    />
+                    <div className="absolute left-0 top-full z-30 mt-1 w-56 rounded-sm border border-border bg-card shadow-lg overflow-hidden animate-fade-in">
+                      <div className="px-3 py-2 border-b border-border/60">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Select Store</p>
+                      </div>
+                      <div className="max-h-48 overflow-y-auto">
+                        {stores.map((s) => {
+                          const isSelected = s.id === activeStoreId
+                          return (
+                            <button
+                              key={s.id}
+                              id={`pos-store-opt-${s.id}`}
+                              onClick={() => { handleStoreChange(s.id); setStoreDropdownOpen(false) }}
+                              className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-xs font-semibold transition-colors ${
+                                isSelected
+                                  ? 'bg-primary/10 text-primary'
+                                  : 'text-foreground hover:bg-muted/60'
+                              }`}
+                            >
+                              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border ${
+                                isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-transparent'
+                              }`}>
+                                {isSelected && (
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                              </span>
+                              <span className="flex-1 truncate">{s.name}</span>
+                              {s.location && (
+                                <span className="text-[9px] text-muted-foreground truncate max-w-[60px]">{s.location}</span>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Search Input — full featured */}
+              <div className="relative flex-1">
+                {/* Search icon */}
+                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  <SearchIcon />
+                </span>
+
+                <input
+                  ref={searchInputRef}
+                  id="pos-search"
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={`Search${categoryFilter !== 'ALL' ? ` in ${categoryFilter}` : ' all products'}...`}
+                  className="h-full w-full bg-transparent pl-10 pr-10 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+                />
+
+                {/* Right side: clear btn or kbd hint */}
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  {search ? (
+                    <button
+                      id="pos-search-clear"
+                      onClick={() => { setSearch(''); searchInputRef.current?.focus() }}
+                      className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <kbd className="hidden lg:flex items-center rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">/</kbd>
+                  )}
+
+                  {/* Result count badge */}
+                  <span className={`hidden sm:flex items-center gap-1 rounded-sm border px-2 py-0.5 text-[10px] font-bold transition-colors ${
+                    isLoadingProducts
+                      ? 'border-border bg-muted text-muted-foreground'
+                      : search || categoryFilter !== 'ALL'
+                      ? 'border-primary/40 bg-primary/10 text-primary'
+                      : 'border-border bg-muted text-muted-foreground'
+                  }`}>
+                    {isLoadingProducts ? (
+                      <LoaderIcon />
+                    ) : (
+                      <>{filteredProducts.length} <span className="font-normal opacity-70">items</span></>
+                    )}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Stats chip */}
-            <span className="shrink-0 text-[10px] text-muted-foreground">
-              {isLoadingProducts ? (
-                <span className="flex items-center gap-1"><LoaderIcon />Loading...</span>
-              ) : (
-                <>
-                  <span className="font-bold text-foreground">{filteredProducts.length}</span>
-                  {' '}items
-                  {activeStore && <> · <span className="font-semibold">{activeStore.name}</span></>}
-                </>
-              )}
-            </span>
-
-            <p className="shrink-0 text-[10px] text-muted-foreground hidden lg:block">
-              Press <kbd className="rounded border border-border bg-muted px-1 py-0.5 font-mono text-[9px]">/</kbd> to search
-            </p>
+            {/* Active category banner — subtle accent strip */}
+            {categoryFilter !== 'ALL' && (
+              <div className="flex items-center justify-between border-t border-border/50 bg-primary/5 px-3 py-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
+                    {categoryFilter}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setCategoryFilter('ALL')}
+                  className="flex items-center gap-1 rounded-sm px-2 py-0.5 text-[10px] font-semibold text-primary/70 hover:bg-primary/10 hover:text-primary transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  Clear filter
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Active category label */}
-          {categoryFilter !== 'ALL' && (
-            <div className="flex items-center justify-between border-b border-border/50 bg-muted/20 px-4 py-1.5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
-                {categoryFilter}
-              </p>
-              <button
-                onClick={() => setCategoryFilter('ALL')}
-                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <XIcon />
-                Clear filter
-              </button>
-            </div>
-          )}
 
           {/* Product grid */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4">
             {isLoadingProducts ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
                 <LoaderIcon />
@@ -886,7 +1205,7 @@ export function POSClient({ session, stores, categories }: Props) {
                 <p className="text-xs">Try a different search or category</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {filteredProducts.map((p) => (
                   <ProductCard key={p.id} product={p} onAdd={handleAddProduct} />
                 ))}
@@ -895,16 +1214,15 @@ export function POSClient({ session, stores, categories }: Props) {
           </div>
         </div>
 
-        {/* ── COL 3: Cart & Summary ── */}
-        <div className="flex w-[340px] shrink-0 flex-col bg-card xl:w-[380px]">
-
+        {/* ── COL 3: Cart & Summary — DESKTOP ONLY (md+) ── */}
+        <div className="hidden md:flex w-[320px] lg:w-[360px] xl:w-[380px] shrink-0 flex-col bg-card border-l border-border">
           {/* Cart header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
               <p className="text-sm font-bold text-foreground">Transaction Cart</p>
               {cart.length > 0 && (
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-black text-primary-foreground">
-                  {cart.reduce((s, i) => s + i.quantity, 0)}
+                  {cartCount}
                 </span>
               )}
             </div>
@@ -919,152 +1237,43 @@ export function POSClient({ session, stores, categories }: Props) {
             )}
           </div>
 
-          {/* Cart items */}
-          <div className="flex-1 overflow-y-auto">
-            {cart.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground/40 p-6">
-                <ShoppingCartIcon />
-                <div className="text-center">
-                  <p className="text-sm font-medium">Cart is empty</p>
-                  <p className="text-xs mt-1">Click a product to add items</p>
-                </div>
-              </div>
-            ) : (
-              <div className="divide-y divide-border/60">
-                {cart.map((item) => {
-                  const stock = item.product.storeInventory?.stock ?? 0
-                  return (
-                    <div
-                      key={item.product.id}
-                      className="flex items-start gap-2.5 px-4 py-3 hover:bg-muted/20 transition-colors"
-                    >
-                      {/* Thumbnail */}
-                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-sm bg-muted/50">
-                        {item.product.imageUrl ? (
-                          <img
-                            src={item.product.imageUrl}
-                            alt={item.product.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
-                            <PackageIcon className="h-5 w-5" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Info + qty */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-bold text-foreground leading-tight line-clamp-1">
-                          {item.product.name}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground line-clamp-1">
-                          {item.product.modelName}
-                        </p>
-                        <div className="mt-1.5 flex items-center gap-1.5">
-                          <button
-                            id={`btn-qty-minus-${item.product.id}`}
-                            onClick={() => updateQty(item.product.id, -1)}
-                            className="flex h-5 w-5 items-center justify-center rounded-sm border border-border bg-background hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive transition-colors"
-                          >
-                            <MinusIcon />
-                          </button>
-                          <span className="min-w-[24px] text-center text-xs font-bold text-foreground">
-                            {item.quantity}
-                          </span>
-                          <button
-                            id={`btn-qty-plus-${item.product.id}`}
-                            onClick={() => updateQty(item.product.id, 1)}
-                            disabled={item.quantity >= stock}
-                            className="flex h-5 w-5 items-center justify-center rounded-sm border border-border bg-background hover:border-primary/50 hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                          >
-                            <PlusIcon />
-                          </button>
-                          <span className="text-[9px] text-muted-foreground">/ {stock}</span>
-                        </div>
-                      </div>
-
-                      {/* Price + remove */}
-                      <div className="flex flex-col items-end gap-1.5 shrink-0">
-                        <p className="text-xs font-bold text-foreground">
-                          {formatIDR(item.unitPrice * item.quantity)}
-                        </p>
-                        <p className="text-[9px] text-muted-foreground">
-                          {formatIDR(item.unitPrice)} each
-                        </p>
-                        <button
-                          id={`btn-remove-${item.product.id}`}
-                          onClick={() => removeItem(item.product.id)}
-                          className="rounded-sm p-0.5 text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          <TrashIcon />
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Summary + checkout */}
-          <div className="border-t border-border bg-muted/10 px-4 py-4">
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Subtotal ({cart.reduce((s, i) => s + i.quantity, 0)} items)</span>
-                <span className="font-medium text-foreground">{formatIDR(subtotal)}</span>
-              </div>
-              {TAX_RATE > 0 && (
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>PPN ({(TAX_RATE * 100).toFixed(0)}%)</span>
-                  <span className="font-medium text-foreground">{formatIDR(taxAmount)}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-3 flex items-center justify-between rounded-sm border border-border bg-background px-3 py-2.5">
-              <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Grand Total
-              </span>
-              <span className="text-xl font-black text-foreground">{formatIDR(grandTotal)}</span>
-            </div>
-
-            {checkoutError && (
-              <p className="mt-2 text-[11px] text-destructive font-medium">{checkoutError}</p>
-            )}
-
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button
-                id="btn-cancel-cart"
-                onClick={clearCart}
-                disabled={cart.length === 0}
-                className="btn-ghost border border-border text-xs py-2.5 disabled:opacity-40"
-              >
-                Cancel
-              </button>
-              <button
-                id="btn-checkout"
-                onClick={() => { setCheckoutError(null); setShowPayment(true) }}
-                disabled={cart.length === 0 || !activeStoreId}
-                className="flex items-center justify-center gap-2 rounded-sm bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
-              >
-                Pay / Checkout
-              </button>
-            </div>
-
-            <div className="mt-3 flex items-center justify-between">
-              <p className="text-[9px] text-muted-foreground">
-                Cashier: <span className="font-semibold">{session.username}</span>
-              </p>
-              <p className="text-[9px] text-muted-foreground font-mono">
-                {new Date().toLocaleDateString('id-ID', {
-                  day: '2-digit', month: 'short', year: 'numeric',
-                })}
-              </p>
-            </div>
-          </div>
+          <CartPanelContent
+            cart={cart}
+            updateQty={updateQty}
+            removeItem={removeItem}
+            clearCart={clearCart}
+            subtotal={subtotal}
+            grandTotal={grandTotal}
+            checkoutError={checkoutError}
+            onCheckout={() => { setCheckoutError(null); setShowPayment(true) }}
+            session={session}
+            activeStoreId={activeStoreId}
+          />
         </div>
       </div>
+
+      {/* ── Mobile Floating Cart Button ── */}
+      <button
+        id="btn-mobile-cart-fab"
+        onClick={() => setMobileCartOpen(true)}
+        className={`fixed bottom-4 right-4 z-30 flex items-center gap-2 rounded-full border border-border/50 px-4 py-3 text-sm font-bold shadow-xl transition-all md:hidden ${
+          cart.length > 0
+            ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20'
+            : 'bg-card text-muted-foreground hover:bg-muted'
+        }`}
+        aria-label={`View cart${cartCount > 0 ? ` (${cartCount} items)` : ''}`}
+      >
+        <ShoppingCartIcon className="h-5 w-5" />
+        {cartCount > 0 ? (
+          <>
+            <span>{cartCount} items</span>
+            <span className="font-black">{formatIDR(grandTotal)}</span>
+            <ChevronUpIcon />
+          </>
+        ) : (
+          <span>Cart</span>
+        )}
+      </button>
     </>
   )
 }

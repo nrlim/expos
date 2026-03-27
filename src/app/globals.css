@@ -211,6 +211,15 @@
     @apply bg-primary/10 text-primary font-semibold border-l-2 border-primary rounded-l-none;
   }
 
+  /* Mobile Sheet Navigation Link — larger touch target */
+  .nav-link-mobile {
+    @apply flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium text-muted-foreground 
+           hover:bg-accent hover:text-accent-foreground transition-colors min-h-[44px];
+  }
+  .nav-link-mobile.active {
+    @apply bg-primary/10 text-primary font-semibold border-l-2 border-primary rounded-l-none;
+  }
+
   /* High Density Page Header */
   .page-header {
     @apply mb-4 flex flex-col gap-0.5 pb-2;
@@ -256,7 +265,7 @@
 @layer utilities {
   .text-balance { text-wrap: balance; }
   
-  /* Minimal corporate transitions (removing flashy UI animations) */
+  /* Minimal corporate transitions */
   .animate-fade-in {
     animation: fadeIn 0.15s ease-out;
   }
@@ -264,6 +273,16 @@
   @keyframes fadeIn {
     from { opacity: 0; }
     to   { opacity: 1; }
+  }
+
+  /* Bottom sheet slide-up animation */
+  .animate-slide-up {
+    animation: slideUp 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
   }
 
   /* Spin */

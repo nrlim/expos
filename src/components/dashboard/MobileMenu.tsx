@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { SessionPayload } from '@/lib/types'
@@ -150,93 +151,133 @@ const NAV_ITEMS: NavItem[] = [
   },
 ]
 
-export default function Sidebar({ session }: Props) {
+export default function MobileMenu({ session }: Props) {
+  const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
 
-  // CASHIER role has no admin sidebar — they only access the POS view
   if (session.role === 'CASHIER') return null
 
   return (
-    <aside className="hidden lg:flex w-60 flex-col border-r border-border bg-card shrink-0">
-      {/* Logo */}
-      <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-border px-4 bg-muted/10">
-        <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-primary">
-          <span className="text-xs font-black text-primary-foreground">eP</span>
-        </div>
-        <span className="font-bold text-foreground tracking-tight">ex-POS</span>
-      </div>
+    <>
+      {/* Hamburger Trigger */}
+      <button
+        id="btn-mobile-menu-toggle"
+        onClick={() => setIsOpen(true)}
+        className="flex h-11 w-11 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors lg:hidden"
+        aria-label="Open navigation menu"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
 
-      {/* Tenant info */}
-      <div className="border-b border-border px-4 py-3 text-center">
-        <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">Store</p>
-        <p className="mt-0.5 text-sm font-bold text-foreground truncate">{session.tenantName}</p>
-        <p className="text-[10px] font-mono text-muted-foreground truncate focus:outline-hidden">/{session.tenantSlug}</p>
-      </div>
+      {/* Backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
-        <p className="mb-2 px-3 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-          Navigation
-        </p>
-        {NAV_ITEMS.map((item) => {
-          if (item.ownerOnly && session.role !== 'OWNER') return null
-          const isActive =
-            item.href === '/dashboard'
-              ? pathname === '/dashboard'
-              : pathname.startsWith(item.href)
-          return (
-            <div key={item.href} className="flex flex-col">
-              <Link
-                href={item.href}
-                className={`nav-link ${isActive ? 'active' : ''}`}
-              >
-                {item.icon}
-                {item.label}
-              </Link>
-
-              {item.subItems && isActive && (
-                <div className="ml-[1.25rem] mt-0.5 border-l border-border/80 flex flex-col gap-0.5">
-                  {item.subItems.map((sub) => {
-                    if (sub.ownerOnly && session.role !== 'OWNER') return null
-
-                    const isSubActive =
-                      sub.href === item.href
-                        ? pathname === sub.href
-                        : pathname.startsWith(sub.href)
-
-                    return (
-                      <Link
-                        key={sub.href}
-                        href={sub.href}
-                        className={`pl-4 py-1.5 text-[11px] font-semibold tracking-wide rounded-r-md transition-all ${
-                          isSubActive
-                            ? 'text-primary bg-primary/10 border-l border-primary -ml-[1px]'
-                            : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
-                        }`}
-                      >
-                        {sub.label}
-                      </Link>
-                    )
-                  })}
-                </div>
-              )}
+      {/* Drawer Sheet */}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-card shadow-2xl transition-transform duration-300 ease-out lg:hidden ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation menu"
+      >
+        {/* Sheet Header */}
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4 bg-muted/10">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-primary">
+              <span className="text-xs font-black text-primary-foreground">eP</span>
             </div>
-          )
-        })}
-      </nav>
-
-      {/* User info bottom */}
-      <div className="border-t border-border px-4 py-3 bg-muted/10">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-primary/20 text-primary text-xs font-bold uppercase">
-            {session.username.charAt(0)}
+            <span className="font-bold text-foreground tracking-tight">ex-POS</span>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-foreground truncate">{session.username}</p>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{session.role}</p>
+          <button
+            id="btn-mobile-menu-close"
+            onClick={() => setIsOpen(false)}
+            className="flex h-9 w-9 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            aria-label="Close menu"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Tenant info */}
+        <div className="border-b border-border px-4 py-3">
+          <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">Store</p>
+          <p className="mt-0.5 text-sm font-bold text-foreground truncate">{session.tenantName}</p>
+          <p className="text-[10px] font-mono text-muted-foreground truncate">/{session.tenantSlug}</p>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
+          <p className="mb-2 px-3 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">Navigation</p>
+          {NAV_ITEMS.map((item) => {
+            if (item.ownerOnly && session.role !== 'OWNER') return null
+            const isActive =
+              item.href === '/dashboard'
+                ? pathname === '/dashboard'
+                : pathname.startsWith(item.href)
+            return (
+              <div key={item.href} className="flex flex-col">
+                <Link
+                  href={item.href}
+                  onClick={() => setIsOpen(false)}
+                  className={`nav-link-mobile ${isActive ? 'active' : ''}`}
+                >
+                  {item.icon}
+                  {item.label}
+                </Link>
+                {item.subItems && isActive && (
+                  <div className="ml-[1.25rem] mt-0.5 border-l border-border/80 flex flex-col gap-0.5">
+                    {item.subItems.map((sub) => {
+                      if (sub.ownerOnly && session.role !== 'OWNER') return null
+                      const isSubActive =
+                        sub.href === item.href
+                          ? pathname === sub.href
+                          : pathname.startsWith(sub.href)
+                      return (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          onClick={() => setIsOpen(false)}
+                          className={`pl-4 py-2 text-[11px] font-semibold tracking-wide rounded-r-md transition-all ${
+                            isSubActive
+                              ? 'text-primary bg-primary/10 border-l border-primary -ml-[1px]'
+                              : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+                          }`}
+                        >
+                          {sub.label}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </nav>
+
+        {/* User info */}
+        <div className="border-t border-border px-4 py-3 bg-muted/10">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-primary/20 text-primary text-xs font-bold uppercase">
+              {session.username.charAt(0)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-foreground truncate">{session.username}</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{session.role}</p>
+            </div>
           </div>
         </div>
       </div>
-    </aside>
+    </>
   )
 }
