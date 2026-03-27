@@ -58,6 +58,7 @@ model Tenant {
   attributes   Attribute[]
   warranties   Warranty[]
   customRoles  CustomRole[]
+  receiptConfigs ReceiptConfig[]
 
   @@map("tenants")
 }
@@ -76,6 +77,7 @@ model Store {
   inventories  Inventory[]
   transactions       Transaction[] @relation("SourceStore")
   targetTransactions Transaction[] @relation("TargetStore")
+  receiptConfig      ReceiptConfig?
 
   @@unique([name, tenantId])
   @@index([tenantId])
@@ -347,4 +349,28 @@ model TransactionItem {
   product     Product     @relation(fields: [productId], references: [id])
 
   @@map("transaction_items")
+}
+
+// ─── Receipt Config ───────────────────────────────────────────────────────────
+
+model ReceiptConfig {
+  id               String   @id @default(cuid())
+  storeId          String   @unique
+  tenantId         String
+  logoUrl          String?
+  storeName        String?
+  address          String?
+  phoneNumber      String?
+  footerMessage    String?
+  socialHandles    String?  // e.g., JSON string array
+  autoPrint        Boolean  @default(false)
+  paperWidth       Int      @default(58) // 58mm or 80mm
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("receipt_configs")
 }

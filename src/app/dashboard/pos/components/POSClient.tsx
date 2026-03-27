@@ -9,6 +9,8 @@ import React, {
 } from 'react'
 import { getPOSProducts, processCheckout } from '@/app/actions/pos'
 import type { POSProduct, CheckoutItem } from '@/app/actions/pos'
+import { getReceiptConfig } from '@/app/actions/receipt'
+import { ReceiptPrinter, type ReceiptData, type ReceiptConfigData } from '@/components/receipt/ReceiptPrinter'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -471,10 +473,14 @@ function SuccessModal({
   transactionId,
   change,
   onClose,
+  onPrint,
+  onWhatsApp,
 }: {
   transactionId: string
   change: number
   onClose: () => void
+  onPrint?: () => void
+  onWhatsApp?: () => void
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
@@ -490,13 +496,31 @@ function SuccessModal({
             <p className="text-2xl font-black text-success">{formatIDR(change)}</p>
           </div>
         )}
-        <button
-          id="btn-success-close"
-          onClick={onClose}
-          className="btn-primary mt-6 w-full justify-center text-sm py-3 min-h-[44px]"
-        >
-          New Transaction
-        </button>
+        <div className="flex flex-col gap-2 mt-6">
+          <button
+            id="btn-success-close"
+            onClick={onClose}
+            className="btn-primary w-full justify-center text-sm py-3 min-h-[44px]"
+          >
+            New Transaction
+          </button>
+          {onPrint && (
+            <button
+              onClick={onPrint}
+              className="btn-ghost border border-border w-full justify-center text-sm py-2"
+            >
+              Print Receipt
+            </button>
+          )}
+          {onWhatsApp && (
+            <button
+              onClick={onWhatsApp}
+              className="btn-ghost border border-success/50 text-success w-full justify-center text-sm py-2 hover:bg-success/10"
+            >
+              Share to WhatsApp
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -764,6 +788,9 @@ export function POSClient({ session, stores, categories }: Props) {
   const [successInfo, setSuccessInfo] = useState<{ id: string; change: number } | null>(null)
   const [isPending, startTransition] = useTransition()
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  
+  const [receiptConfig, setReceiptConfig] = useState<ReceiptConfigData | null>(null)
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null)
 
   // Mobile cart sheet state
   const [mobileCartOpen, setMobileCartOpen] = useState(false)
@@ -800,10 +827,19 @@ export function POSClient({ session, stores, categories }: Props) {
     if (!activeStoreId) return
     setIsLoadingProducts(true)
     setLoadError(null)
+    
     getPOSProducts(activeStoreId).then((res) => {
       if (res.success && res.data) setProducts(res.data)
       else setLoadError(res.error ?? 'Failed to load products.')
       setIsLoadingProducts(false)
+    })
+
+    getReceiptConfig(activeStoreId).then((res) => {
+      if (res.success && res.data) {
+        setReceiptConfig(res.data)
+      } else {
+        setReceiptConfig({ paperWidth: 58, autoPrint: false })
+      }
     })
   }, [activeStoreId])
 
@@ -902,6 +938,12 @@ export function POSClient({ session, stores, categories }: Props) {
       unitPrice: i.unitPrice,
     }))
     startTransition(async () => {
+      // Snapshot the data before clearing the cart
+      const currentCart = [...cart]
+      const currentSubtotal = subtotal
+      const currentTaxAmount = taxAmount
+      const currentGrandTotal = grandTotal
+      
       const result = await processCheckout({
         storeId: activeStoreId,
         paymentMethod: method,
@@ -911,6 +953,26 @@ export function POSClient({ session, stores, categories }: Props) {
         items,
       })
       if (result.success) {
+        const now = new Date()
+        const discountAmount = Math.round(currentSubtotal * (discount / 100))
+        setReceiptData({
+          transactionId: result.transactionId!,
+          cashierName: session.username,
+          date: now.toLocaleDateString('id-ID'),
+          time: now.toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute:'2-digit' }),
+          items: currentCart.map(i => ({
+            name: i.product.name,
+            qty: i.quantity,
+            price: i.unitPrice,
+            total: i.unitPrice * i.quantity
+          })),
+          subtotal: currentSubtotal,
+          tax: currentTaxAmount,
+          discount: discountAmount,
+          total: currentGrandTotal - discountAmount,
+          paymentMethod: method
+        })
+      
         setShowPayment(false)
         setMobileCartOpen(false)
         setCart([])
@@ -958,7 +1020,25 @@ export function POSClient({ session, stores, categories }: Props) {
         <SuccessModal
           transactionId={successInfo.id}
           change={successInfo.change}
-          onClose={() => setSuccessInfo(null)}
+          onClose={() => {
+            setSuccessInfo(null)
+            setReceiptData(null)
+          }}
+          onPrint={() => window.print()}
+          onWhatsApp={() => {
+            if (!receiptData || !receiptConfig) return
+            const itemsText = receiptData.items.map(i => `${i.name} (x${i.qty}) - Rp ${i.total.toLocaleString('id-ID')}`).join('\n')
+            const text = `*${receiptConfig.storeName || 'Store Receipt'}*\n${receiptConfig.address || ''}\n\n*Transaction ID:* ${receiptData.transactionId}\n*Date:* ${receiptData.date} ${receiptData.time}\n*Cashier:* ${receiptData.cashierName}\n\n*Items:*\n${itemsText}\n\n*Grand Total:* Rp ${receiptData.total.toLocaleString('id-ID')}\n*Payment:* ${receiptData.paymentMethod}\n\nThank you for your purchase!`
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+          }}
+        />
+      )}
+      
+      {receiptData && receiptConfig && (
+        <ReceiptPrinter 
+          data={receiptData} 
+          config={receiptConfig} 
+          onClose={() => {}} 
         />
       )}
 

@@ -146,6 +146,7 @@ const NAV_ITEMS: NavItem[] = [
     subItems: [
       { label: 'General Info', href: '/dashboard/settings' },
       { label: 'Locations & Stores', href: '/dashboard/settings/stores', ownerOnly: true },
+      { label: 'Receipt Config', href: '/dashboard/settings/receipts', ownerOnly: true },
     ],
   },
 ]
